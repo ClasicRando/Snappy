@@ -9,4 +9,6 @@ dependencies {
     implementation("io.github.classgraph:classgraph:4.8.162")
     // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
     testImplementation("org.xerial:sqlite-jdbc:3.43.0.0")
+    // https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc
+    testImplementation("com.microsoft.sqlserver:mssql-jdbc:12.4.1.jre11")
 }
