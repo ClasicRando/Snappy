@@ -1,7 +1,16 @@
+plugins {
+    kotlin("plugin.serialization") version "1.9.0"
+}
+
 dependencies {
     implementation(kotlin("reflect"))
     // https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-coroutines-core
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    // https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-serialization-core-jvm
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.6.0")
+    // https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-serialization-json-jvm
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.6.0")
+
     testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
     testImplementation("io.mockk:mockk:1.13.7")

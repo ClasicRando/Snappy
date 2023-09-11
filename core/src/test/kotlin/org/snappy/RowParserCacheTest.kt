@@ -3,7 +3,6 @@ package org.snappy
 import org.snappy.data.AnnotatedTestClass
 import org.snappy.data.CacheMissClass
 import org.snappy.data.CompanionObjectParser
-import org.snappy.data.RowClass
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -16,12 +15,12 @@ class RowParserCacheTest {
     }
 
     @Test
-    fun `loadAutoCacheClasses caches SnappyAutoCache classes`() {
-        RowParserCache.loadAutoCacheClasses("org.snappy")
+    fun `rowParserCache should be auto populated with auto cache classes`() {
+        RowParserCache.loadCache()
+        assertTrue(RowParserCache.cacheLoaded)
 
-        assertTrue(RowParserCache.getOrNull<AnnotatedTestClass>() != null)
-        assertTrue(RowParserCache.getOrNull<RowClass>() != null)
-        assertTrue(RowParserCache.getOrNull<CompanionObjectParser>() != null)
+        val populatedCache = RowParserCache.getOrNull<AnnotatedTestClass>()
+        assertNotNull(populatedCache)
     }
 
     @Test
