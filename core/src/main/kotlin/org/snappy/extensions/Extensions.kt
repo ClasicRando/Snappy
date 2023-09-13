@@ -46,8 +46,7 @@ internal fun List<Any?>.toSqlParameterList(): List<SqlParameter> {
  * - [parameter] is [SqlParameter.Out] but the statement is not a [CallableStatement]
  * - no parameter within the statement corresponds to the supplied parameter (e.g. not enough
  * placeholders)
- * - [parameter] cannot be cast to the required type based upon the sql type ID
- * - [parameter] cannot be supplied as a generic [PreparedStatement.setObject] parameter
+ * - [parameter] cannot be encoded to into the [PreparedStatement]
  *
  * @exception java.sql.SQLException
  * @exception OutParameterOutsideProcedure
@@ -77,7 +76,7 @@ internal fun PreparedStatement.setParameter(parameterIndex: Int, parameter: SqlP
  */
 internal fun Connection.getStatement(
     sql: String,
-    parameters: List<Any>,
+    parameters: List<Any?>,
     statementType: StatementType,
     timeout: UInt?,
 ): PreparedStatement {

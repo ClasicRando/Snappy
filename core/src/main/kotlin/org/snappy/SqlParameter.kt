@@ -12,15 +12,15 @@ import java.sql.Timestamp
  * [Text][StatementType.Text] all parameters are of inputs only. When the statement is
  * [StoredProcedure][StatementType.StoredProcedure] parameters can either be `IN` (default) or
  * `OUT`. This means that for most cases, the parameters should be [SqlParameter.In] unless you are
- * calling a stored procedure with `OUT` parameters. This is why, when processing query parameters,
- * if the value is not [SqlParameter] they are implicitly wrapped as a [SqlParameter.In] and if a
- * [SqlParameter.Out] is found in a query that is not a
- * [StoredProcedure][StatementType.StoredProcedure] and exception is thrown.
+ * calling a stored procedure with `OUT` parameters.
  */
 sealed interface SqlParameter {
     /**
      * Input SQL parameter. Default for text and stored procedure calls when parameter is not a
-     * [SqlParameter] instance
+     * [SqlParameter] instance. Instances are created by passing any input value which is then
+     * type checked to convert into the appropriate [Encode] method. Note: even though this class
+     * can take any input type, when encoding into the [java.sql.PreparedStatement], the encoding
+     * might fail at runtime since the type cannot actually be added to a statement.
      */
     class In(input: Any?): SqlParameter {
         val value = when (input) {
