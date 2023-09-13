@@ -36,6 +36,7 @@ class ExecuteBatchTest {
                         value text
                     );
                 """.trimIndent())
+                statement.execute("delete from $testDataTable")
                 statement.execute("""
                     insert into $testDataTable (id, value)
                     values (1, 'Update Test 1'),(2, 'Update Test 2'),

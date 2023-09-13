@@ -31,11 +31,12 @@ class ExecuteTest {
         useConnection { connection ->
             connection.createStatement().use { statement ->
                 statement.execute("""
-                    create table $testDataTable (
+                    create table if not exists $testDataTable (
                         id integer primary key,
                         value text
                     )
                 """.trimIndent())
+                statement.execute("delete from $testDataTable")
                 statement.execute("""
                     insert into $testDataTable (id, value)
                     values (1, 'Update Test 1'),(2, 'Update Test 2'),
