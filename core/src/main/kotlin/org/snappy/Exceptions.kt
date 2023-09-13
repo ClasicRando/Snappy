@@ -60,3 +60,11 @@ internal fun invalidDataClassConstructorCall(
     """.trimIndent()
     return InvalidDataClassConstructorCall(message)
 }
+
+class BatchExecutionFailed(sql: String, batchNumber: UInt) : Throwable(
+    """
+        Batch SQL statement failed
+        Batch Number: $batchNumber
+        SQL: ${"\n" + sql.replaceIndent("        ")}
+    """.trimIndent()
+)

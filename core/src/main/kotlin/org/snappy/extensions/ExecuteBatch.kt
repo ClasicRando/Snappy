@@ -2,56 +2,18 @@ package org.snappy.extensions
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.snappy.BatchExecutionFailed
 import org.snappy.ParameterBatch
-import org.snappy.SqlParameter
 import org.snappy.StatementType
+import org.snappy.toSqlParameterBatch
 import java.lang.IllegalStateException
 import java.sql.Connection
-import java.sql.PreparedStatement
 
-/**
- * Create a new [PreparedStatement] using the provided details. If the [statementType] is
- * [StatementType.StoredProcedure] the [sql] query is intended to be a procedure name that is
- * transformed into a JDBC stored procedure call.
- *
- * If anything within the function throws an exception the statement will always be closed before
- * the exception is rethrown.
- *
- * @exception java.sql.SQLException underlining database operation fails
- * @exception IllegalStateException statement is null before returning (should never happen)
- */
-internal fun <T : ParameterBatch> Connection.getBatchedStatement(
-    sql: String,
-    batchedParameters: List<T>,
-    statementType: StatementType,
-    timeout: UInt?,
-): PreparedStatement {
-    check(!isClosed) { "Cannot query a closed connection" }
-    var statement: PreparedStatement? = null
-    try {
-        statement = when (statementType) {
-            StatementType.StoredProcedure -> prepareCall(
-                "{call $sql(${"?,".repeat(batchedParameters.size).trim(',')})"
-            )
-            StatementType.Text -> prepareStatement(sql)
-        }
-        statement?.let {
-            timeout?.let {
-                statement.queryTimeout = it.toInt()
-            }
-            for (batch in batchedParameters) {
-                for ((i, parameter) in batch.toParameterBatch().withIndex()) {
-                    statement.setParameter(i + 1, SqlParameter.In(parameter))
-                }
-                statement.addBatch()
-            }
-        }
-        return statement
-            ?: throw IllegalStateException("Statement cannot be null when exiting function")
-    } catch (t: Throwable) {
-        statement?.close()
-        throw t
-    }
+private const val EXECUTE_FAILED_LONG = java.sql.Statement.EXECUTE_FAILED.toLong()
+
+/** Return the [batchSize] provided or 100 if the value is null or equal to zero */
+internal fun batchSizeOrDefault(batchSize: UInt?): Int {
+    return batchSize?.toInt()?.takeIf { it > 0 } ?: 100
 }
 
 /**
@@ -62,103 +24,192 @@ internal fun <T : ParameterBatch> Connection.getBatchedStatement(
  * @param statementType query variant as [StatementType.Text] (default) or
  * [StatementType.StoredProcedure]
  * @param timeout query timeout in seconds, default is unlimited time
+ * @param batchSize size of batches to send to the database for processing, default is 100
+ * @param failOnErrorReturn flag indicating that the operation should throw a [BatchExecutionFailed]
+ * when the records affected count is [java.sql.Statement.EXECUTE_FAILED]
  *
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
+ * @see java.sql.Statement.executeBatch
  */
 fun <T : ParameterBatch> Connection.executeBatch(
     sql: String,
-    batchedParameters: List<T> = emptyList(),
+    batchedParameters: Sequence<T> = emptySequence(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
+    batchSize: UInt? = null,
+    failOnErrorReturn: Boolean = false,
 ): IntArray {
-    if (batchedParameters.isEmpty()) {
-        return intArrayOf(0)
-    }
-    return getBatchedStatement(
+    val finalBatchSize = batchSizeOrDefault(batchSize)
+    return getStatement(
         sql,
-        batchedParameters,
+        emptyList(),
         statementType,
         timeout,
     ).use { preparedStatement ->
-        preparedStatement.executeBatch()
+        batchedParameters.chunkedIter(finalBatchSize).fold(intArrayOf()) { acc, batchedParameter ->
+            var batchNumber = 0u
+            for (batch in batchedParameter) {
+                for ((i, parameter) in batch.toSqlParameterBatch().withIndex()) {
+                    preparedStatement.setParameter(i + 1, parameter)
+                }
+                preparedStatement.addBatch()
+                batchNumber++
+            }
+            val result = preparedStatement.executeBatch()
+            if (failOnErrorReturn && result.any { it == java.sql.Statement.EXECUTE_FAILED }) {
+                throw BatchExecutionFailed(sql, batchNumber)
+            }
+            acc + result
+        }
     }
 }
 
 /**
  * Execute a query against this [Connection], returning the number of rows affected by the query.
- * Suspends a call to [execute] within the context of [Dispatchers.IO].
+ * This operation is wrapped in a transaction to force the operation to be completed in its entirety
+ * or not at all. Suspends a call to [execute] within the context of [Dispatchers.IO].
  *
  * @param sql query or procedure name to execute
  * @param batchedParameters
  * @param statementType query variant as [StatementType.Text] (default) or
  * [StatementType.StoredProcedure]
  * @param timeout query timeout in seconds, default is unlimited time
+ * @param batchSize size of batches to send to the database for processing, default is 100
+ * @param transaction flag indicating that the operation should be wrapped in a transaction for
+ * consistency (i.e. all batches are successful or no batches are successful), default is false
  *
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
+ * @see java.sql.Statement.executeBatch
  */
 suspend fun <T : ParameterBatch> Connection.executeBatchSuspend(
     sql: String,
-    batchedParameters: List<T> = emptyList(),
+    batchedParameters: Sequence<T> = emptySequence(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
+    batchSize: UInt? = null,
+    transaction: Boolean = false,
 ): IntArray = withContext(Dispatchers.IO) {
-    executeBatch(sql, batchedParameters, statementType, timeout)
+    executeBatch(sql, batchedParameters, statementType, timeout, batchSize, transaction)
 }
 
-
 /**
- * Execute a query against this [Connection], returning the number of rows affected by the query.
- * This method call should be used if the number of rows affected might exceed [Int.MAX_VALUE].
- *
- * @param sql query or procedure name to execute
- * @param batchedParameters
- * @param statementType query variant as [StatementType.Text] (default) or
- * [StatementType.StoredProcedure]
- * @param timeout query timeout in seconds, default is unlimited time
- *
- * @exception java.sql.SQLException underlining database operation fails
- * @exception IllegalStateException the connection is closed
+ * Execute a query with batches, expecting batches to return a rows impacted number that is greater
+ * than [Int.MAX_VALUE]. Creates a [java.sql.PreparedStatement], executing each batch of parameters
+ * against the statement, sending chunks of the batches based upon the [batchSize].
  */
-fun <T : ParameterBatch> Connection.executeBatchLarge(
+internal fun <T : ParameterBatch> executeLargeBatch(
+    connection: Connection,
     sql: String,
-    batchedParameters: List<T> = emptyList(),
-    statementType: StatementType = StatementType.Text,
-    timeout: UInt? = null,
-): LongArray {
-    if (batchedParameters.isEmpty()) {
-        return longArrayOf(0)
-    }
-    return getBatchedStatement(
+    batchedParameters: Sequence<T>,
+    statementType: StatementType,
+    timeout: UInt?,
+    batchSize: Int,
+    failOnErrorReturn: Boolean,
+) : LongArray {
+    return connection.getStatement(
         sql,
-        batchedParameters,
+        emptyList(),
         statementType,
         timeout,
     ).use { preparedStatement ->
-        preparedStatement.executeLargeBatch()
+        batchedParameters.chunked(batchSize).fold(longArrayOf()) { acc, batchedParameter ->
+            var batchNumber = 0u
+            for (batch in batchedParameter) {
+                for ((i, parameter) in batch.toSqlParameterBatch().withIndex()) {
+                    preparedStatement.setParameter(i + 1, parameter)
+                }
+                preparedStatement.addBatch()
+                batchNumber++
+            }
+            val result = preparedStatement.executeLargeBatch()
+            if (failOnErrorReturn && result.any { it == EXECUTE_FAILED_LONG }) {
+                throw BatchExecutionFailed(sql, batchNumber)
+            }
+            acc + result
+        }
     }
 }
 
 /**
  * Execute a query against this [Connection], returning the number of rows affected by the query.
- * This method call should be used if the number of rows affected might exceed [Int.MAX_VALUE].
- * Suspends a call to [execute] within the context of [Dispatchers.IO].
+ * This operation is wrapped in a transaction to force the operation to be completed in its entirety
+ * or not at all. This method call should be used if the number of rows affected by any batch might
+ * exceed [Int.MAX_VALUE].
  *
  * @param sql query or procedure name to execute
  * @param batchedParameters
  * @param statementType query variant as [StatementType.Text] (default) or
  * [StatementType.StoredProcedure]
  * @param timeout query timeout in seconds, default is unlimited time
+ * @param batchSize size of batches to send to the database for processing, default is 100
+ * @param failOnErrorReturn flag indicating that the operation should throw a [BatchExecutionFailed]
+ * when the records affected count is [java.sql.Statement.EXECUTE_FAILED]
  *
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
+ * @see java.sql.Statement.executeLargeBatch
  */
-suspend fun <T : ParameterBatch> Connection.executeBatchLargeSuspend(
+fun <T : ParameterBatch> Connection.executeLargeBatch(
     sql: String,
-    batchedParameters: List<T> = emptyList(),
+    batchedParameters: Sequence<T> = emptySequence(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
+    batchSize: UInt? = null,
+    failOnErrorReturn: Boolean = false,
+): LongArray {
+    val finalBatchSize = batchSizeOrDefault(batchSize)
+    return getStatement(
+        sql,
+        emptyList(),
+        statementType,
+        timeout,
+    ).use { preparedStatement ->
+        batchedParameters.chunked(finalBatchSize).fold(longArrayOf()) { acc, batchedParameter ->
+            var batchNumber = 0u
+            for (batch in batchedParameter) {
+                for ((i, parameter) in batch.toSqlParameterBatch().withIndex()) {
+                    preparedStatement.setParameter(i + 1, parameter)
+                }
+                preparedStatement.addBatch()
+                batchNumber++
+            }
+            val result = preparedStatement.executeLargeBatch()
+            if (failOnErrorReturn && result.any { it == EXECUTE_FAILED_LONG }) {
+                throw BatchExecutionFailed(sql, batchNumber)
+            }
+            acc + result
+        }
+    }
+}
+
+/**
+ * Execute a query against this [Connection], returning the number of rows affected by the query.
+ * This operation is wrapped in a transaction to force the operation to be completed in its entirety
+ * or not at all. This method call should be used if the number of rows affected by any batch might
+ * exceed [Int.MAX_VALUE]. Suspends a call to [execute] within the context of [Dispatchers.IO].
+ *
+ * @param sql query or procedure name to execute
+ * @param batchedParameters
+ * @param statementType query variant as [StatementType.Text] (default) or
+ * [StatementType.StoredProcedure]
+ * @param timeout query timeout in seconds, default is unlimited time
+ * @param batchSize size of batches to send to the database for processing, default is 100
+ * @param transaction flag indicating that the operation should be wrapped in a transaction for
+ * consistency (i.e. all batches are successful or no batches are successful), default is false
+ *
+ * @exception java.sql.SQLException underlining database operation fails
+ * @exception IllegalStateException the connection is closed
+ * @see java.sql.Statement.executeLargeBatch
+ */
+suspend fun <T : ParameterBatch> Connection.executeLargeBatchSuspend(
+    sql: String,
+    batchedParameters: Sequence<T> = emptySequence(),
+    statementType: StatementType = StatementType.Text,
+    timeout: UInt? = null,
+    batchSize: UInt? = null,
+    transaction: Boolean = false,
 ): LongArray = withContext(Dispatchers.IO) {
-    executeBatchLarge(sql, batchedParameters, statementType, timeout)
+    executeLargeBatch(sql, batchedParameters, statementType, timeout, batchSize, transaction)
 }
