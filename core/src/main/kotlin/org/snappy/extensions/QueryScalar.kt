@@ -74,6 +74,8 @@ inline fun <reified T : Any> Connection.queryScalarOrNull(
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
  * @see java.sql.Statement.executeQuery
+ * @see withContext
+ * @see Dispatchers.IO
  */
 suspend inline fun <reified T : Any> Connection.queryScalarOrNullSuspend(
     sql: String,
@@ -122,6 +124,8 @@ inline fun <reified T : Any> Connection.queryScalar(
  * @exception IllegalStateException the connection is closed
  * @exception EmptyResult result contain no rows
  * @see java.sql.Statement.executeQuery
+ * @see withContext
+ * @see Dispatchers.IO
  */
 suspend inline fun <reified T : Any> Connection.queryScalarSuspend(
     sql: String,

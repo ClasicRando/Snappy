@@ -81,6 +81,8 @@ fun <T : ParameterBatch> Connection.executeBatch(
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
  * @see java.sql.Statement.executeBatch
+ * @see withContext
+ * @see Dispatchers.IO
  */
 suspend fun <T : ParameterBatch> Connection.executeBatchSuspend(
     sql: String,
@@ -201,6 +203,8 @@ fun <T : ParameterBatch> Connection.executeLargeBatch(
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
  * @see java.sql.Statement.executeLargeBatch
+ * @see withContext
+ * @see Dispatchers.IO
  */
 suspend fun <T : ParameterBatch> Connection.executeLargeBatchSuspend(
     sql: String,

@@ -71,6 +71,8 @@ inline fun <reified T : Any> Connection.query(
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
  * @see java.sql.Statement.executeQuery
+ * @see withContext
+ * @see Dispatchers.IO
  */
 suspend inline fun <reified T : Any> Connection.querySuspend(
     sql: String,

@@ -46,6 +46,8 @@ fun Connection.execute(
  * @exception IllegalStateException the connection is closed
  * @see java.sql.Statement.execute
  * @see java.sql.Statement.getUpdateCount
+ * @see withContext
+ * @see Dispatchers.IO
  */
 suspend fun Connection.executeSuspend(
     sql: String,
@@ -100,6 +102,8 @@ fun Connection.executeLarge(
  * @exception IllegalStateException the connection is closed
  * @see java.sql.Statement.execute
  * @see java.sql.Statement.getLargeUpdateCount
+ * @see withContext
+ * @see Dispatchers.IO
  */
 suspend fun Connection.executeLargeSuspend(
     sql: String,

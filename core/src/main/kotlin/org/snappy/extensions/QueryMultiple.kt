@@ -47,6 +47,8 @@ fun Connection.queryMultiple(
  * @see java.sql.Statement.execute
  * @see java.sql.Statement.getResultSet
  * @see java.sql.Statement.getMoreResults
+ * @see withContext
+ * @see Dispatchers.IO
  */
 suspend inline fun Connection.queryMultipleSuspend(
     sql: String,

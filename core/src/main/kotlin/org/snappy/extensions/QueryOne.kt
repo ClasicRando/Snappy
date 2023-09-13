@@ -125,6 +125,8 @@ inline fun <reified T : Any> Connection.querySingle(
  * @exception IllegalStateException the connection is closed
  * @exception TooManyRows result contains more than 1 row
  * @see java.sql.Statement.executeQuery
+ * @see withContext
+ * @see Dispatchers.IO
  */
 suspend inline fun <reified T : Any> Connection.querySingleOrNullSuspend(
     sql: String,
@@ -150,6 +152,8 @@ suspend inline fun <reified T : Any> Connection.querySingleOrNullSuspend(
  * @exception TooManyRows result contains more than 1 row
  * @exception EmptyResult result contain no rows
  * @see java.sql.Statement.executeQuery
+ * @see withContext
+ * @see Dispatchers.IO
  */
 suspend inline fun <reified T : Any> Connection.querySingleSuspend(
     sql: String,
@@ -228,6 +232,8 @@ inline fun <reified T : Any> Connection.queryFirst(
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
  * @see java.sql.Statement.executeQuery
+ * @see withContext
+ * @see Dispatchers.IO
  */
 suspend inline fun <reified T : Any> Connection.queryFirstOrNullSuspend(
     sql: String,
@@ -252,6 +258,8 @@ suspend inline fun <reified T : Any> Connection.queryFirstOrNullSuspend(
  * @exception IllegalStateException the connection is closed
  * @exception EmptyResult result contain no rows
  * @see java.sql.Statement.executeQuery
+ * @see withContext
+ * @see Dispatchers.IO
  */
 suspend inline fun <reified T : Any> Connection.queryFirstSuspend(
     sql: String,
