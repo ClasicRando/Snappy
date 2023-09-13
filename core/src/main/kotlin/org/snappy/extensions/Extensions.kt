@@ -3,18 +3,13 @@ package org.snappy.extensions
 import org.snappy.SnappyRow
 import org.snappy.NullFieldName
 import org.snappy.OutParameterOutsideProcedure
-import org.snappy.ParameterBatch
 import org.snappy.SqlParameter
 import org.snappy.StatementType
 import java.lang.IllegalStateException
-import java.math.BigDecimal
 import java.sql.CallableStatement
 import java.sql.Connection
-import java.sql.Date
 import java.sql.PreparedStatement
 import java.sql.ResultSet
-import java.sql.Time
-import java.sql.Timestamp
 
 /**
  * Extract all column names from a [ResultSet]. Can fail if a column name is null
@@ -66,23 +61,7 @@ internal fun PreparedStatement.setParameter(parameterIndex: Int, parameter: SqlP
             }
             this.registerOutParameter(parameterIndex, parameter.sqlType)
         }
-        is SqlParameter.In -> when {
-            else -> when (parameter.value) {
-                is Byte -> this.setByte(parameterIndex, parameter.value)
-                is Short -> this.setShort(parameterIndex, parameter.value)
-                is Int -> this.setInt(parameterIndex, parameter.value)
-                is Long -> this.setLong(parameterIndex, parameter.value)
-                is Float -> this.setFloat(parameterIndex, parameter.value)
-                is Double -> this.setDouble(parameterIndex, parameter.value)
-                is BigDecimal -> this.setBigDecimal(parameterIndex, parameter.value)
-                is Date -> this.setDate(parameterIndex, parameter.value)
-                is Timestamp -> this.setTimestamp(parameterIndex, parameter.value)
-                is Time -> this.setTime(parameterIndex, parameter.value)
-                is String -> this.setString(parameterIndex, parameter.value)
-                is ByteArray -> this.setBytes(parameterIndex, parameter.value)
-                else -> this.setObject(parameterIndex, parameter.value)
-            }
-        }
+        is SqlParameter.In -> parameter.value.encode(this, parameterIndex)
     }
 }
 
