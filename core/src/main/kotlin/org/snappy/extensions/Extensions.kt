@@ -1,5 +1,7 @@
 package org.snappy.extensions
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.snappy.NullFieldName
 import org.snappy.OutParameterOutsideProcedure
 import org.snappy.SnappyRow
@@ -9,6 +11,7 @@ import java.sql.CallableStatement
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
+import javax.sql.DataSource
 
 /**
  * Extract all column names from a [ResultSet]. Can fail if a column name is null
@@ -122,4 +125,29 @@ fun <T> Sequence<T>.chunkedIter(size: Int): Sequence<Sequence<T>> = sequence {
         }
         yield(sequence)
     }
+}
+
+/**
+ * Convenience method to execute a [block] within the context of a [Connection] from a [DataSource].
+ * [Connection] used within [block] will always be closed with exceptions rethrown.
+ *
+ * @see DataSource.getConnection
+ * @see AutoCloseable.use
+ */
+inline fun <T> DataSource.useConnection(block: Connection.() -> T): T = this.connection.use(block)
+
+/**
+ * Convenience method to execute a [block] within the context of a [Connection] from a [DataSource].
+ * [Connection] used within [block] will always be closed with exceptions rethrown. Suspends while
+ * executing [block] within the context of [Dispatchers.IO].
+ *
+ * @see withContext
+ * @see Dispatchers.IO
+ * @see DataSource.getConnection
+ * @see AutoCloseable.use
+ */
+suspend inline fun <T> DataSource.useConnectionSuspend(
+    crossinline block: suspend Connection.() -> T,
+): T = withContext(Dispatchers.IO) {
+    connection.use { block(it) }
 }
