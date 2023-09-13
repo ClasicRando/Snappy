@@ -127,3 +127,22 @@ internal fun Connection.getStatement(
         throw t
     }
 }
+
+/**
+ * Chunk a [Sequence] into a subset of [Sequence]s of the desired [size]. If the [Sequence] does not
+ * fit evenly into chunks of the desired size, the trailing [Sequence] will be smaller.
+ */
+fun <T> Sequence<T>.chunkedIter(size: Int): Sequence<Sequence<T>> = sequence {
+    val iterator = this@chunkedIter.iterator()
+    while (iterator.hasNext()) {
+        var itemNumber = 0
+        val sequence = generateSequence {
+            if (!iterator.hasNext() || itemNumber == size) {
+                return@generateSequence null
+            }
+            itemNumber++
+            iterator.next()
+        }
+        yield(sequence)
+    }
+}
