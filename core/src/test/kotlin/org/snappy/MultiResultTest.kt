@@ -6,7 +6,6 @@ import org.snappy.data.SimpleTestClass
 import org.snappy.extensions.queryMultiple
 import java.sql.Connection
 import java.sql.DriverManager
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

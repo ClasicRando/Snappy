@@ -6,7 +6,6 @@ import org.snappy.BatchExecutionFailed
 import org.snappy.ParameterBatch
 import org.snappy.StatementType
 import org.snappy.toSqlParameterBatch
-import java.lang.IllegalStateException
 import java.sql.Connection
 
 private const val EXECUTE_FAILED_LONG = java.sql.Statement.EXECUTE_FAILED.toLong()

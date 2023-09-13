@@ -1,6 +1,5 @@
 package org.snappy.extensions
 
-import java.lang.Exception
 import java.sql.Connection
 
 inline fun <T> Connection.asTransaction(block: Connection.() -> T): T {

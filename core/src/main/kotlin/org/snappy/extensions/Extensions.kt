@@ -1,11 +1,10 @@
 package org.snappy.extensions
 
-import org.snappy.SnappyRow
 import org.snappy.NullFieldName
 import org.snappy.OutParameterOutsideProcedure
+import org.snappy.SnappyRow
 import org.snappy.SqlParameter
 import org.snappy.StatementType
-import java.lang.IllegalStateException
 import java.sql.CallableStatement
 import java.sql.Connection
 import java.sql.PreparedStatement

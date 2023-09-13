@@ -1,12 +1,11 @@
 package org.snappy
 
-import org.snappy.data.AnnotatedTestClass
-import org.snappy.data.SimpleTestClass
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
+import org.snappy.data.AnnotatedTestClass
 import org.snappy.data.NonEmptyConstructorTestClass
+import org.snappy.data.SimpleTestClass
 import kotlin.test.Test
-
 import kotlin.test.assertEquals
 
 class DefaultRowParserTest {

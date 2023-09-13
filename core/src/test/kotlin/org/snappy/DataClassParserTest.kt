@@ -1,17 +1,11 @@
 package org.snappy
 
-import org.snappy.data.AnnotatedTestDataClass
-import org.snappy.data.SimpleTestDataClass
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
+import org.snappy.data.AnnotatedTestDataClass
+import org.snappy.data.SimpleTestDataClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.IllegalArgumentException
-import kotlin.test.assertTrue
-import kotlin.test.fail
-import kotlin.time.DurationUnit
-import kotlin.time.measureTimedValue
-import kotlin.time.toDuration
 
 class DataClassParserTest {
 

@@ -1,6 +1,5 @@
 package org.snappy
 
-import java.lang.IllegalArgumentException
 import kotlin.reflect.KClass
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
