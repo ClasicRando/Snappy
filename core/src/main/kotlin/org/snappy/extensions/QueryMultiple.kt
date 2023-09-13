@@ -17,6 +17,9 @@ import java.sql.Connection
  *
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
+ * @see java.sql.Statement.execute
+ * @see java.sql.Statement.getResultSet
+ * @see java.sql.Statement.getMoreResults
  */
 fun Connection.queryMultiple(
     sql: String,
@@ -41,6 +44,9 @@ fun Connection.queryMultiple(
  *
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
+ * @see java.sql.Statement.execute
+ * @see java.sql.Statement.getResultSet
+ * @see java.sql.Statement.getMoreResults
  */
 suspend inline fun Connection.queryMultipleSuspend(
     sql: String,

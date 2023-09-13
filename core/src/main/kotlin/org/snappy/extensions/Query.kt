@@ -46,6 +46,7 @@ internal fun <T> queryImpl(
  *
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
+ * @see java.sql.Statement.executeQuery
  */
 inline fun <reified T : Any> Connection.query(
     sql: String,
@@ -69,6 +70,7 @@ inline fun <reified T : Any> Connection.query(
  *
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
+ * @see java.sql.Statement.executeQuery
  */
 suspend inline fun <reified T : Any> Connection.querySuspend(
     sql: String,

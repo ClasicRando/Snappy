@@ -16,6 +16,8 @@ import java.sql.Connection
  *
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
+ * @see java.sql.Statement.execute
+ * @see java.sql.Statement.getUpdateCount
  */
 fun Connection.execute(
     sql: String,
@@ -42,6 +44,8 @@ fun Connection.execute(
  *
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
+ * @see java.sql.Statement.execute
+ * @see java.sql.Statement.getUpdateCount
  */
 suspend fun Connection.executeSuspend(
     sql: String,
@@ -65,6 +69,8 @@ suspend fun Connection.executeSuspend(
  *
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
+ * @see java.sql.Statement.execute
+ * @see java.sql.Statement.getLargeUpdateCount
  */
 fun Connection.executeLarge(
     sql: String,
@@ -92,6 +98,8 @@ fun Connection.executeLarge(
  *
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
+ * @see java.sql.Statement.execute
+ * @see java.sql.Statement.getLargeUpdateCount
  */
 suspend fun Connection.executeLargeSuspend(
     sql: String,

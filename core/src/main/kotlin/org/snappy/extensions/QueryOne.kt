@@ -13,7 +13,8 @@ import java.sql.Connection
  * Row return variants. Tells the result parser if an error should be thrown if multiple rows are
  * returned.
  */
-enum class RowReturn {
+@PublishedApi
+internal enum class RowReturn {
     Single,
     First,
 }
@@ -66,6 +67,7 @@ internal fun <T> querySingleRowImpl(
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
  * @exception TooManyRows result contains more than 1 row
+ * @see java.sql.Statement.executeQuery
  */
 inline fun <reified T : Any> Connection.querySingleOrNull(
     sql: String,
@@ -98,6 +100,7 @@ inline fun <reified T : Any> Connection.querySingleOrNull(
  * @exception IllegalStateException the connection is closed
  * @exception TooManyRows result contains more than 1 row
  * @exception EmptyResult result contain no rows
+ * @see java.sql.Statement.executeQuery
  */
 inline fun <reified T : Any> Connection.querySingle(
     sql: String,
@@ -121,6 +124,7 @@ inline fun <reified T : Any> Connection.querySingle(
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
  * @exception TooManyRows result contains more than 1 row
+ * @see java.sql.Statement.executeQuery
  */
 suspend inline fun <reified T : Any> Connection.querySingleOrNullSuspend(
     sql: String,
@@ -145,6 +149,7 @@ suspend inline fun <reified T : Any> Connection.querySingleOrNullSuspend(
  * @exception IllegalStateException the connection is closed
  * @exception TooManyRows result contains more than 1 row
  * @exception EmptyResult result contain no rows
+ * @see java.sql.Statement.executeQuery
  */
 suspend inline fun <reified T : Any> Connection.querySingleSuspend(
     sql: String,
@@ -167,6 +172,7 @@ suspend inline fun <reified T : Any> Connection.querySingleSuspend(
  *
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
+ * @see java.sql.Statement.executeQuery
  */
 inline fun <reified T : Any> Connection.queryFirstOrNull(
     sql: String,
@@ -198,6 +204,7 @@ inline fun <reified T : Any> Connection.queryFirstOrNull(
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
  * @exception EmptyResult result contain no rows
+ * @see java.sql.Statement.executeQuery
  */
 inline fun <reified T : Any> Connection.queryFirst(
     sql: String,
@@ -220,6 +227,7 @@ inline fun <reified T : Any> Connection.queryFirst(
  *
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
+ * @see java.sql.Statement.executeQuery
  */
 suspend inline fun <reified T : Any> Connection.queryFirstOrNullSuspend(
     sql: String,
@@ -243,6 +251,7 @@ suspend inline fun <reified T : Any> Connection.queryFirstOrNullSuspend(
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
  * @exception EmptyResult result contain no rows
+ * @see java.sql.Statement.executeQuery
  */
 suspend inline fun <reified T : Any> Connection.queryFirstSuspend(
     sql: String,
