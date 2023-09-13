@@ -40,7 +40,7 @@ internal fun ResultSet.toSnappyRow(columns: List<String>): SnappyRow {
  * already a [SqlParameter] will remain untouched, while other values are converted to a
  * [SqlParameter.In] instance.
  */
-internal fun List<Any>.toSqlParameterList(): List<SqlParameter> {
+internal fun List<Any?>.toSqlParameterList(): List<SqlParameter> {
     if (isEmpty()) return emptyList()
     return this.map { it as? SqlParameter ?: SqlParameter.In(it) }
 }
