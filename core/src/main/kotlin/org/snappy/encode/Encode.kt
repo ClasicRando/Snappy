@@ -1,4 +1,4 @@
-package org.snappy
+package org.snappy.encode
 
 import java.sql.PreparedStatement
 

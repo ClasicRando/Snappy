@@ -3,8 +3,8 @@ package org.snappy.extensions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.snappy.EmptyResult
-import org.snappy.RowParser
-import org.snappy.RowParserCache
+import org.snappy.rowparse.RowParser
+import org.snappy.SnappyMapper
 import org.snappy.StatementType
 import org.snappy.TooManyRows
 import java.sql.Connection
@@ -75,7 +75,7 @@ inline fun <reified T : Any> Connection.querySingleOrNull(
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
 ): T? {
-    val rowParser = RowParserCache.getOrDefault<T>()
+    val rowParser = SnappyMapper.rowParserCache.getOrDefault<T>()
     return querySingleRowImpl(
         this,
         rowParser,
@@ -184,7 +184,7 @@ inline fun <reified T : Any> Connection.queryFirstOrNull(
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
 ): T? {
-    val rowParser = RowParserCache.getOrDefault<T>()
+    val rowParser = SnappyMapper.rowParserCache.getOrDefault<T>()
     return querySingleRowImpl(
         this,
         rowParser,

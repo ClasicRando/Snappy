@@ -1,11 +1,14 @@
 @file:Suppress("UNCHECKED_CAST")
 
-package org.snappy
+package org.snappy.rowparse
 
 import io.github.classgraph.ClassGraph
 import io.github.classgraph.ClassInfo
 import io.github.classgraph.ScanResult
 import kotlinx.serialization.json.Json
+import org.snappy.NoDefaultConstructor
+import org.snappy.SnappyAutoCache
+import org.snappy.SnappyConfig
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
@@ -18,16 +21,15 @@ import kotlin.reflect.jvm.jvmErasure
 import kotlin.reflect.typeOf
 
 /**
- * Global cache of [RowParser] implementation for a desired row type. Backed by a
- * [ConcurrentHashMap] to allow for multiple threads to access the cache at once.
+ * Cache of [RowParser] implementation for a desired row type. Backed by a [ConcurrentHashMap] to
+ * allow for multiple threads to access the cache at once.
  */
-object RowParserCache {
+class RowParserCache internal constructor(private val config: SnappyConfig) {
     /** Internally used flag to indicate if the cache has been loaded */
     internal var cacheLoaded: Boolean = false
         private set
     /** Map of an output type linked to a [RowParser] */
     private val rowParserCache: ConcurrentHashMap<KType, RowParser<*>> by lazy {
-        val config = readConfigFile()
         val cache = ConcurrentHashMap<KType, RowParser<*>>()
         val packages = config.basePackages.toTypedArray()
         ClassGraph().enableAllInfo().acceptPackages(*packages).scan().use { result ->
@@ -92,7 +94,7 @@ object RowParserCache {
      * to be loaded immateriality in a blocking but thread-safe manner. This reduces the first load
      * time of query within the application.
      */
-    fun loadCache() {
+    internal fun loadCache() {
         rowParserCache
     }
 

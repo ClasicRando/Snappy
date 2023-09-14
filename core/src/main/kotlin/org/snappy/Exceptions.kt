@@ -28,10 +28,6 @@ class EmptyResult : Throwable("Expected result to contain rows but none were fou
 class NoMoreResults
     : Throwable("Attempted to access more results from a statement that has already been exhausted")
 
-/** Exception thrown when parsing a [SnappyRow] using [SnappyRow.getAs] but the value was null */
-class NullRowValue(name: String)
-    : Throwable("Assertion of a non-null value when parsing a row for key '$name' failed")
-
 class NullSet(name: String)
     : Throwable("Attempted to call a setter of a non-null field, '$name', with a null value")
 
@@ -67,4 +63,8 @@ class BatchExecutionFailed(sql: String, batchNumber: UInt) : Throwable(
         Batch Number: $batchNumber
         SQL: ${"\n" + sql.replaceIndent("        ")}
     """.trimIndent()
+)
+
+class DecodeError(decodeClassName: String?, valueType: String?) : Throwable(
+    "Failed to decode value of type '$valueType' into '$decodeClassName'"
 )

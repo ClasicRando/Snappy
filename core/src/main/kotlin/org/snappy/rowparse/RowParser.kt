@@ -1,4 +1,6 @@
-package org.snappy
+package org.snappy.rowparse
+
+import org.snappy.SnappyRow
 
 /**
  * Main interface allowing [java.sql.ResultSet] objects to be parsed into a more meaningful type

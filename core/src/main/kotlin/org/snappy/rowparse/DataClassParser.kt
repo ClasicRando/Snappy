@@ -1,5 +1,8 @@
-package org.snappy
+package org.snappy.rowparse
 
+import org.snappy.SnappyColumn
+import org.snappy.SnappyRow
+import org.snappy.invalidDataClassConstructorCall
 import kotlin.reflect.KClass
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
