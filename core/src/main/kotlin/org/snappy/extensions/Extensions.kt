@@ -85,7 +85,7 @@ internal fun Connection.getStatement(
     try {
         statement = when (statementType) {
             StatementType.StoredProcedure -> prepareCall(
-                "{call $sql(${"?,".repeat(parameters.size).trim(',')})"
+                "{call $sql(${"?,".repeat(parameters.size).trim(',')})}"
             )
             StatementType.Text -> prepareStatement(sql)
         }

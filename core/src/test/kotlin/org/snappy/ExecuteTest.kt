@@ -1,8 +1,10 @@
 package org.snappy
 
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import org.snappy.extensions.execute
+import org.snappy.extensions.executeOutParameters
 import org.snappy.extensions.query
 import org.snappy.extensions.querySingle
 import org.snappy.extensions.querySingleOrNull
@@ -13,16 +15,27 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ExecuteTest {
 
+    private val missingEnvironmentVariableMessage = "To run MultiResultTest the environment " +
+            "variable SNAPPY_MSSQL_CONNECTION_STRING must be available"
+
     private val testDbPath = "test.db"
     private val testDataTable = "test_execute_data"
+    private val testDataProcedure = "dbo.test_procedure"
 
     private inline fun useConnection(action: (Connection) -> Unit) {
         DriverManager.getConnection("jdbc:sqlite:test.db").use(action)
+    }
+
+    private inline fun useMsSqlConnection(action: (Connection) -> Unit) {
+        val connectionString = System.getenv("SNAPPY_MSSQL_CONNECTION_STRING")
+            ?: throw IllegalStateException(missingEnvironmentVariableMessage)
+        DriverManager.getConnection(connectionString).use(action)
     }
 
     @BeforeTest
@@ -42,6 +55,21 @@ class ExecuteTest {
                     values (1, 'Update Test 1'),(2, 'Update Test 2'),
                            (3, 'Delete Test 1'),(4, 'Delete Test 2')
                 """.trimIndent())
+            }
+        }
+        if (System.getenv("SNAPPY_MSSQL_CONNECTION_STRING") != null) {
+            useMsSqlConnection { connection ->
+                connection.createStatement().use { statement ->
+                    statement.execute("""
+                        create or alter procedure $testDataProcedure
+                            @Param1 int,
+                            @Param2 varchar(50) OUTPUT
+                        as
+                        begin
+                            set @Param2 = 'Test Output';
+                        end;
+                    """.trimIndent())
+                }
             }
         }
     }
@@ -124,6 +152,23 @@ class ExecuteTest {
                 listOf(id),
             )
             assertNull(record)
+        }
+    }
+
+    @EnabledIfEnvironmentVariable(named = "SNAPPY_MSSQL_TEST", matches = "true")
+    @Test
+    fun `executeOutParameters should return out parameters when successful`() {
+        useMsSqlConnection { connection ->
+            val result = connection.executeOutParameters(
+                testDataProcedure,
+                listOf(1, SqlParameter.Out(java.sql.Types.VARCHAR)),
+            )
+
+            assertTrue(result.isNotEmpty())
+            assertEquals(1, result.size)
+            val value = result[0]
+            assertNotNull(value)
+            assertEquals("Test Output", value)
         }
     }
 

@@ -12,7 +12,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-@EnabledIfEnvironmentVariable(named = "SNAPPY_MULTI_RESULT_TEST", matches = "true")
+@EnabledIfEnvironmentVariable(named = "SNAPPY_MSSQL_TEST", matches = "true")
 class MultiResultTest {
 
     private val missingEnvironmentVariableMessage = "To run MultiResultTest the environment " +
