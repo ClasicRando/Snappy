@@ -2,10 +2,10 @@ package org.snappy
 
 import org.junit.jupiter.api.assertThrows
 import org.snappy.data.SimpleTestClass
-import org.snappy.extensions.queryFirst
-import org.snappy.extensions.queryFirstOrNull
-import org.snappy.extensions.querySingle
-import org.snappy.extensions.querySingleOrNull
+import org.snappy.query.queryFirst
+import org.snappy.query.queryFirstOrNull
+import org.snappy.query.querySingle
+import org.snappy.query.querySingleOrNull
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager

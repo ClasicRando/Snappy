@@ -3,11 +3,12 @@ package org.snappy
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import org.snappy.extensions.execute
-import org.snappy.extensions.executeOutParameters
-import org.snappy.extensions.query
-import org.snappy.extensions.querySingle
-import org.snappy.extensions.querySingleOrNull
+import org.snappy.execute.execute
+import org.snappy.execute.executeOutParameters
+import org.snappy.query.query
+import org.snappy.query.querySingle
+import org.snappy.query.querySingleOrNull
+import org.snappy.statement.SqlParameter
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager

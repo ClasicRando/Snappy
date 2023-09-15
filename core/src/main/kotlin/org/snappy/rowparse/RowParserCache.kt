@@ -5,11 +5,9 @@ package org.snappy.rowparse
 import io.github.classgraph.ClassGraph
 import io.github.classgraph.ClassInfo
 import io.github.classgraph.ScanResult
-import kotlinx.serialization.json.Json
 import org.snappy.NoDefaultConstructor
-import org.snappy.SnappyAutoCache
+import org.snappy.annotations.SnappyCacheRowParser
 import org.snappy.SnappyConfig
-import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
@@ -91,8 +89,8 @@ class RowParserCache internal constructor(private val config: SnappyConfig) {
 
     /**
      * Method to ensure the cache is loaded before continuing. This will force the lazy initialized
-     * to be loaded immateriality in a blocking but thread-safe manner. This reduces the first load
-     * time of query within the application.
+     * caches to be loaded immediately in a blocking but thread-safe manner. This reduces the first
+     * load time of queries within the application.
      */
     internal fun loadCache() {
         rowParserCache
@@ -102,36 +100,19 @@ class RowParserCache internal constructor(private val config: SnappyConfig) {
     private val rowParserInterfaceClass = rowParserInterfaceKClass.java
 
     /**
-     * Read the 'snappy.json' config file to get all external packages to consider for auto caching.
-     * In all cases, the package 'org.snappy' is considered. If no file is found, no other packages
-     * are considered.
-     */
-    private fun readConfigFile(): SnappyConfig {
-        val file = File("snappy.json")
-        val config = if (file.exists()) {
-            val text = file.readText()
-            Json.decodeFromString<SnappyConfig>(text)
-        } else {
-            SnappyConfig(basePackages = mutableListOf())
-        }
-        config.basePackages.add("org.snappy")
-        return config
-    }
-
-    /**
      * Yield pairs of a [KType] and [RowParser] to initialize the cache with classes marked as
-     * [SnappyAutoCache]
+     * [SnappyCacheRowParser]
      */
     private fun processAllAutoCacheClasses(result: ScanResult) = sequence {
-        for (classInfo in result.getClassesWithAnnotation(SnappyAutoCache::class.java)) {
+        for (classInfo in result.getClassesWithAnnotation(SnappyCacheRowParser::class.java)) {
             yield(processClassInfoForCache(result, classInfo))
         }
     }
 
     /**
-     * Process a [classInfo] instance annotated with [SnappyAutoCache] to insert a [RowParser]
+     * Process a [classInfo] instance annotated with [SnappyCacheRowParser] to insert a [RowParser]
      *
-     * @see SnappyAutoCache
+     * @see SnappyCacheRowParser
      */
     private fun processClassInfoForCache(
         result: ScanResult,
@@ -157,7 +138,7 @@ class RowParserCache internal constructor(private val config: SnappyConfig) {
      * Process and return a [RowParser] for the specified [kClass], using reflection to get the row
      * type for cache insertion.
      *
-     * @see SnappyAutoCache
+     * @see SnappyCacheRowParser
      */
     private fun insertRowParserClass(
         scanResult: ScanResult,

@@ -1,9 +1,10 @@
-package org.snappy.extensions
+package org.snappy.execute
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.snappy.SqlParameter
-import org.snappy.StatementType
+import org.snappy.statement.SqlParameter
+import org.snappy.statement.StatementType
+import org.snappy.extensions.getStatement
 import java.sql.CallableStatement
 import java.sql.Connection
 

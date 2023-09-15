@@ -24,6 +24,11 @@ object SnappyMapper {
     @PublishedApi
     internal val decoderCache = DecoderCache(config)
 
+    /**
+     * Method to ensure the cache is loaded before continuing. This will force the lazy initialized
+     * caches to be loaded immediately in a blocking but thread-safe manner. This reduces the first
+     * load time of queries within the application.
+     */
     fun loadCache() {
         rowParserCache.loadCache()
         decoderCache.loadCache()

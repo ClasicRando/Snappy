@@ -5,6 +5,7 @@ import org.junit.jupiter.api.assertThrows
 import org.snappy.data.AnnotatedTestDataClass
 import org.snappy.data.SimpleTestDataClass
 import org.snappy.rowparse.DataClassParser
+import org.snappy.rowparse.SnappyRow
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -64,7 +65,7 @@ class DataClassParserTest {
         )
         val row = SnappyRow(rowData)
 
-        assertThrows<InvalidDataClassConstructorCall> { simpleDataClassParser.parseRow(row) }
+        assertThrows<DecodeError> { simpleDataClassParser.parseRow(row) }
     }
 
     @Test

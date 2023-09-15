@@ -1,9 +1,12 @@
-package org.snappy.extensions
+package org.snappy.query
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.snappy.EmptyResult
-import org.snappy.StatementType
+import org.snappy.statement.StatementType
+import org.snappy.extensions.columNames
+import org.snappy.extensions.getStatement
+import org.snappy.extensions.toSnappyRow
 import java.sql.Connection
 import kotlin.reflect.KClass
 

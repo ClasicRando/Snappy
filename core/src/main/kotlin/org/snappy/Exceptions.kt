@@ -1,10 +1,16 @@
 package org.snappy
 
+import org.snappy.rowparse.SnappyRow
+import java.lang.Exception
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
+import kotlin.reflect.KType
 import kotlin.reflect.jvm.jvmErasure
 
-/** Exception thrown when a [org.snappy.SqlParameter.Out] is used outside a procedure call */
+/**
+ * Exception thrown when a [SqlParameter.Out][org.snappy.statement.SqlParameter.Out] is used outside
+ * a procedure call
+ */
 class OutParameterOutsideProcedure
     : Throwable("Attempted to use an OUT parameter in a PreparedStatement")
 
@@ -42,19 +48,19 @@ class NoDefaultConstructor(cls: KClass<*>)
 class InvalidDataClassConstructorCall(message: String) : Throwable(message)
 
 internal fun invalidDataClassConstructorCall(
-    parameterNames: List<String>,
+    parameterNames: List<Pair<String, KType>>,
     row: SnappyRow,
-): InvalidDataClassConstructorCall {
+): Nothing {
     val displayRows = row.entries.joinToString("\n        ") { (key, value) ->
         "    $key: $value (${value?.let { it::class.qualifiedName}})"
     }
     val message = """
         Attempted to call a data class constructor with invalid parameter types.
-        Parameter Names: ${parameterNames.joinToString()}
+        Parameter Names: ${parameterNames.joinToString { it.first }}
         Row:
         $displayRows
     """.trimIndent()
-    return InvalidDataClassConstructorCall(message)
+    throw InvalidDataClassConstructorCall(message)
 }
 
 class BatchExecutionFailed(sql: String, batchNumber: UInt) : Throwable(
@@ -65,6 +71,13 @@ class BatchExecutionFailed(sql: String, batchNumber: UInt) : Throwable(
     """.trimIndent()
 )
 
-class DecodeError(decodeClassName: String?, valueType: String?) : Throwable(
-    "Failed to decode value of type '$valueType' into '$decodeClassName'"
+class DecodeError(decodeClassName: String?, value: Any?, valueType: String?) : Throwable(
+    "Failed to decode value of type '$valueType' into '$decodeClassName', Value: $value"
 )
+
+fun decodeError(decodeClass: KClass<*>, value: Any?): Nothing {
+    throw DecodeError(decodeClass.qualifiedName, value, value?.let { it::class.qualifiedName })
+}
+
+class CannotFindDecodeValueType(typeName: String)
+    : Exception("Cannot find decode value type '$typeName'")

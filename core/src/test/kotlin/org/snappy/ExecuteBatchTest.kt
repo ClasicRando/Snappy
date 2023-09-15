@@ -3,9 +3,10 @@ package org.snappy
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import org.snappy.extensions.batchSizeOrDefault
-import org.snappy.extensions.executeBatch
-import org.snappy.extensions.query
+import org.snappy.batch.ParameterBatch
+import org.snappy.batch.batchSizeOrDefault
+import org.snappy.batch.executeBatch
+import org.snappy.query.query
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager

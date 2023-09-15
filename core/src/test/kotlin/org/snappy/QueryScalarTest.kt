@@ -1,8 +1,8 @@
 package org.snappy
 
 import org.junit.jupiter.api.assertThrows
-import org.snappy.extensions.queryScalar
-import org.snappy.extensions.queryScalarOrNull
+import org.snappy.query.queryScalar
+import org.snappy.query.queryScalarOrNull
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager

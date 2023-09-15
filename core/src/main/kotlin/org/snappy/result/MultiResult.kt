@@ -1,7 +1,11 @@
-package org.snappy
+package org.snappy.result
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.snappy.EmptyResult
+import org.snappy.NoMoreResults
+import org.snappy.SnappyMapper
+import org.snappy.TooManyRows
 import org.snappy.extensions.columNames
 import org.snappy.extensions.toSnappyRow
 import java.sql.ResultSet

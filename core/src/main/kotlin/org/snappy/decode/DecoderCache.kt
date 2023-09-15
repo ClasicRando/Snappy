@@ -4,10 +4,12 @@ package org.snappy.decode
 import io.github.classgraph.ClassGraph
 import io.github.classgraph.ClassInfo
 import io.github.classgraph.ScanResult
+import org.snappy.CannotFindDecodeValueType
 import org.snappy.NoDefaultConstructor
-import org.snappy.SnappyAutoCache
+import org.snappy.annotations.SnappyCacheRowParser
 import org.snappy.SnappyConfig
-import org.snappy.DecodeError
+import org.snappy.annotations.SnappyCacheDecoder
+import org.snappy.decodeError
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
@@ -87,8 +89,8 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
 
     /**
      * Method to ensure the cache is loaded before continuing. This will force the lazy initialized
-     * to be loaded immateriality in a blocking but thread-safe manner. This reduces the first load
-     * time of query within the application.
+     * caches to be loaded immediately in a blocking but thread-safe manner. This reduces the first
+     * load time of queries within the application.
      */
     internal fun loadCache() {
         decoderCache
@@ -99,60 +101,74 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
 
     /**
      * Yield pairs of a [KType] and [Decoder] to initialize the cache with classes marked as
-     * [SnappyAutoCache]
+     * [SnappyCacheDecoder]
      */
     private fun processAllAutoCacheClasses(result: ScanResult) = sequence {
-        for (classInfo in result.getClassesWithAnnotation(SnappyAutoCache::class.java)) {
-            yield(processClassInfoForCache(result, classInfo))
+        for (classInfo in result.getClassesWithAnnotation(SnappyCacheDecoder::class.java)) {
+            yieldAll(processClassInfoForCache(result, classInfo))
         }
     }
 
     /**
-     * Process a [classInfo] instance annotated with [SnappyAutoCache] to insert a [Decoder]
+     * Process a [classInfo] instance annotated with [SnappyCacheDecoder] to insert a [Decoder]
      *
-     * @see SnappyAutoCache
+     * @see SnappyCacheDecoder
      */
     private fun processClassInfoForCache(
         result: ScanResult,
         classInfo: ClassInfo,
-    ): Pair<KType, Decoder<*>> {
+    ) = sequence {
         val cls = classInfo.loadClass()
         val kClass = cls.kotlin
         if (decoderInterfaceClass.isAssignableFrom(cls)) {
-            return insertDecoderClass(result, classInfo, kClass as KClass<Decoder<*>>)
+            yieldAll(parseDecoder(result, classInfo, kClass as KClass<Decoder<*>>))
+            return@sequence
         }
         kClass.companionObject?.let { companion ->
             if (companion.isSubclassOf(decoderInterfaceKClass)) {
-                return insertDecoderClass(
+                yieldAll(parseDecoder(
                     result,
                     result.getClassInfo(companion.java.name),
                     companion as KClass<Decoder<*>>
-                )
+                ))
+                return@sequence
             }
         }
-        return kClass.createType() to generateDefaultDecoder(kClass)
+        yield(kClass.createType(nullable = false) to generateDefaultDecoder(kClass))
+        yield(kClass.createType(nullable = true) to generateDefaultDecoder(kClass))
     }
 
     /**
      * Process and return a [Decoder] for the specified [kClass], using reflection to get the row
      * type for cache insertion.
      *
-     * @see SnappyAutoCache
+     * @see SnappyCacheRowParser
      */
-    private fun insertDecoderClass(
+    private fun parseDecoder(
         scanResult: ScanResult,
         classInfo: ClassInfo,
         kClass: KClass<Decoder<*>>,
-    ): Pair<KType, Decoder<*>> {
-        val rowType = classInfo.typeSignature
+    ) = sequence {
+        val valueTypeName = classInfo.typeSignature
             .superinterfaceSignatures
             .first { it.fullyQualifiedClassName == decoderInterfaceClass.name }
             .typeArguments
             .first()
             .typeSignature
-        val rowClass = scanResult.getClassInfo(rowType.toString())
-            .loadClass()
-            .kotlin
+            .toString()
+        var valueCls = scanResult.getClassInfo(valueTypeName)
+        if (valueCls == null) {
+            valueCls = ClassGraph().enableAllInfo().acceptClasses(valueTypeName).scan().use {
+                it.getClassInfo(valueTypeName)
+            }
+        }
+        val valueClass = when {
+            valueCls == null && valueTypeName.startsWith("java.") -> {
+                DecoderCache::class.java.classLoader.loadClass(valueTypeName)
+            }
+            valueCls != null -> valueCls.loadClass()
+            else -> throw CannotFindDecodeValueType(valueTypeName)
+        }.kotlin
         val decoder = try {
             if (kClass.isCompanion) {
                 kClass.objectInstance
@@ -161,30 +177,29 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
                 kClass.createInstance()
             }
         } catch (_: IllegalArgumentException) {
-            throw NoDefaultConstructor(rowClass)
+            throw NoDefaultConstructor(valueClass)
         }
-        return rowClass.createType() to decoder
+        yield(valueClass.createType() to decoder)
     }
 
     /** Create a new default decoder for the [valueClass] provided */
-    private fun <T : Any> generateDefaultDecoder(valueClass: KClass<T>): Decoder<T> {
+    private fun <T : Any> generateDefaultDecoder(valueType: KType): Decoder<T> {
+        val valueClass = valueType.jvmErasure
         if (valueClass.isValue) {
             Decoder { value ->
                 try {
                     valueClass.primaryConstructor!!.call(value)
                 } catch (_: IllegalArgumentException) {
-                    throw DecodeError(
-                        valueClass.qualifiedName,
-                        value?.let { it::class.qualifiedName },
-                    )
+                    decodeError(valueClass, value)
                 }
             }
         }
         return Decoder { value ->
-            valueClass.safeCast(value) ?: throw DecodeError(
-                valueClass.qualifiedName,
-                value?.let { it::class.qualifiedName }
-            )
+            if (valueType.isMarkedNullable && value == null) {
+                return@Decoder null
+            }
+            val valueCast = valueClass.safeCast(value) ?: decodeError(valueClass, value)
+            valueCast as T?
         }
     }
 }

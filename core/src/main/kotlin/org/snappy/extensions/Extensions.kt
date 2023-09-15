@@ -2,9 +2,9 @@ package org.snappy.extensions
 
 import org.snappy.NullFieldName
 import org.snappy.OutParameterOutsideProcedure
-import org.snappy.SnappyRow
-import org.snappy.SqlParameter
-import org.snappy.StatementType
+import org.snappy.rowparse.SnappyRow
+import org.snappy.statement.SqlParameter
+import org.snappy.statement.StatementType
 import java.sql.CallableStatement
 import java.sql.Connection
 import java.sql.PreparedStatement
@@ -31,7 +31,7 @@ internal fun ResultSet.toSnappyRow(columns: List<String>): SnappyRow {
 
 /**
  * Map a [List] of objects into a [List] of [SqlParameter]. Any item within the [List] that is
- * already a [SqlParameter] will remain untouched, while other values are converted to a
+ * already a [SqlParameter] will remain unaltered, while other values are converted to a
  * [SqlParameter.In] instance.
  */
 internal fun List<Any?>.toSqlParameterList(): List<SqlParameter> {

@@ -5,7 +5,9 @@ import java.sql.Date
 import java.sql.PreparedStatement
 import java.sql.Time
 import java.sql.Timestamp
+import java.time.Instant
 
+/** Wrapper for [Byte] to allow for encoding to a [PreparedStatement] */
 @JvmInline
 private value class SqlByte(private val byte: Byte) : Encode {
     override fun encode(preparedStatement: PreparedStatement, parameterIndex: Int) {
@@ -13,6 +15,7 @@ private value class SqlByte(private val byte: Byte) : Encode {
     }
 }
 
+/** Wrapper for [Short] to allow for encoding to a [PreparedStatement] */
 @JvmInline
 private value class SqlShort(private val short: Short) : Encode {
     override fun encode(preparedStatement: PreparedStatement, parameterIndex: Int) {
@@ -20,6 +23,7 @@ private value class SqlShort(private val short: Short) : Encode {
     }
 }
 
+/** Wrapper for [Int] to allow for encoding to a [PreparedStatement] */
 @JvmInline
 private value class SqlInt(private val int: Int) : Encode {
     override fun encode(preparedStatement: PreparedStatement, parameterIndex: Int) {
@@ -27,6 +31,7 @@ private value class SqlInt(private val int: Int) : Encode {
     }
 }
 
+/** Wrapper for [Long] to allow for encoding to a [PreparedStatement] */
 @JvmInline
 private value class SqlLong(private val long: Long) : Encode {
     override fun encode(preparedStatement: PreparedStatement, parameterIndex: Int) {
@@ -34,6 +39,7 @@ private value class SqlLong(private val long: Long) : Encode {
     }
 }
 
+/** Wrapper for [Float] to allow for encoding to a [PreparedStatement] */
 @JvmInline
 private value class SqlFloat(private val float: Float) : Encode {
     override fun encode(preparedStatement: PreparedStatement, parameterIndex: Int) {
@@ -41,6 +47,7 @@ private value class SqlFloat(private val float: Float) : Encode {
     }
 }
 
+/** Wrapper for [Double] to allow for encoding to a [PreparedStatement] */
 @JvmInline
 private value class SqlDouble(private val double: Double) : Encode {
     override fun encode(preparedStatement: PreparedStatement, parameterIndex: Int) {
@@ -48,6 +55,7 @@ private value class SqlDouble(private val double: Double) : Encode {
     }
 }
 
+/** Wrapper for [BigDecimal] to allow for encoding to a [PreparedStatement] */
 @JvmInline
 private value class SqlBigDecimal(private val bigDecimal: BigDecimal) : Encode {
     override fun encode(preparedStatement: PreparedStatement, parameterIndex: Int) {
@@ -55,6 +63,7 @@ private value class SqlBigDecimal(private val bigDecimal: BigDecimal) : Encode {
     }
 }
 
+/** Wrapper for [Date] to allow for encoding to a [PreparedStatement] */
 @JvmInline
 private value class SqlDate(private val date: Date) : Encode {
     override fun encode(preparedStatement: PreparedStatement, parameterIndex: Int) {
@@ -62,6 +71,7 @@ private value class SqlDate(private val date: Date) : Encode {
     }
 }
 
+/** Wrapper for [Timestamp] to allow for encoding to a [PreparedStatement] */
 @JvmInline
 private value class SqlTimestamp(private val timestamp: Timestamp) : Encode {
     override fun encode(preparedStatement: PreparedStatement, parameterIndex: Int) {
@@ -69,6 +79,7 @@ private value class SqlTimestamp(private val timestamp: Timestamp) : Encode {
     }
 }
 
+/** Wrapper for [Time] to allow for encoding to a [PreparedStatement] */
 @JvmInline
 private value class SqlTime(private val time: Time) : Encode {
     override fun encode(preparedStatement: PreparedStatement, parameterIndex: Int) {
@@ -76,6 +87,7 @@ private value class SqlTime(private val time: Time) : Encode {
     }
 }
 
+/** Wrapper for [String] to allow for encoding to a [PreparedStatement] */
 @JvmInline
 private value class SqlString(private val string: String) : Encode {
     override fun encode(preparedStatement: PreparedStatement, parameterIndex: Int) {
@@ -83,6 +95,7 @@ private value class SqlString(private val string: String) : Encode {
     }
 }
 
+/** Wrapper for [ByteArray] to allow for encoding to a [PreparedStatement] */
 @JvmInline
 private value class SqlByteArray(private val byteArray: ByteArray) : Encode {
     override fun encode(preparedStatement: PreparedStatement, parameterIndex: Int) {
@@ -90,6 +103,11 @@ private value class SqlByteArray(private val byteArray: ByteArray) : Encode {
     }
 }
 
+/**
+ * Convert an [input] object to a wrapper value that implements [Encode] for
+ * [java.sql.PreparedStatement] parameter binding. If [input] is already a value that implements
+ * [Encode] the value is returned without wrapping.
+ */
 fun toEncodable(input: Any?): Encode = when (input) {
     is Encode -> input
     is Byte -> SqlByte(input)
@@ -101,6 +119,7 @@ fun toEncodable(input: Any?): Encode = when (input) {
     is BigDecimal -> SqlBigDecimal(input)
     is Date -> SqlDate(input)
     is Timestamp -> SqlTimestamp(input)
+    is Instant -> SqlTimestamp(Timestamp(input.epochSecond))
     is Time -> SqlTime(input)
     is String -> SqlString(input)
     is ByteArray -> SqlByteArray(input)

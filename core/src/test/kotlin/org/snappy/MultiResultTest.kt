@@ -3,7 +3,7 @@ package org.snappy
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.snappy.data.SimpleTestClass
-import org.snappy.extensions.queryMultiple
+import org.snappy.query.queryMultiple
 import java.sql.Connection
 import java.sql.DriverManager
 import kotlin.test.Test

@@ -1,6 +1,6 @@
 package org.snappy.data
 
-import org.snappy.SnappyColumn
+import org.snappy.annotations.SnappyColumn
 
 data class AnnotatedTestDataClass(
     @SnappyColumn("simple_name")

@@ -1,4 +1,4 @@
-package org.snappy
+package org.snappy.statement
 
 import org.snappy.encode.Encode
 import org.snappy.encode.toEncodable

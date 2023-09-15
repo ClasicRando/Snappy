@@ -1,11 +1,12 @@
-package org.snappy.extensions
+package org.snappy.batch
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.snappy.BatchExecutionFailed
-import org.snappy.ParameterBatch
-import org.snappy.StatementType
-import org.snappy.toSqlParameterBatch
+import org.snappy.statement.StatementType
+import org.snappy.extensions.chunkedIter
+import org.snappy.extensions.getStatement
+import org.snappy.extensions.setParameter
 import java.sql.Connection
 
 private const val EXECUTE_FAILED_LONG = java.sql.Statement.EXECUTE_FAILED.toLong()
@@ -67,7 +68,7 @@ fun <T : ParameterBatch> Connection.executeBatch(
 /**
  * Execute a query against this [Connection], returning the number of rows affected by the query.
  * This operation is wrapped in a transaction to force the operation to be completed in its entirety
- * or not at all. Suspends a call to [execute] within the context of [Dispatchers.IO].
+ * or not at all. Suspends a call to [executeBatch] within the context of [Dispatchers.IO].
  *
  * @param sql query or procedure name to execute
  * @param batchedParameters
@@ -189,7 +190,8 @@ fun <T : ParameterBatch> Connection.executeLargeBatch(
  * Execute a query against this [Connection], returning the number of rows affected by the query.
  * This operation is wrapped in a transaction to force the operation to be completed in its entirety
  * or not at all. This method call should be used if the number of rows affected by any batch might
- * exceed [Int.MAX_VALUE]. Suspends a call to [execute] within the context of [Dispatchers.IO].
+ * exceed [Int.MAX_VALUE]. Suspends a call to [executeLargeBatch] within the context of
+ * [Dispatchers.IO].
  *
  * @param sql query or procedure name to execute
  * @param batchedParameters

@@ -1,5 +1,6 @@
-package org.snappy
+package org.snappy.rowparse
 
+import org.snappy.WrongFieldType
 import kotlin.reflect.KClass
 import kotlin.reflect.safeCast
 

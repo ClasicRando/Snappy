@@ -3,8 +3,7 @@ package org.snappy.rowparse
 import org.snappy.MismatchSet
 import org.snappy.NoDefaultConstructor
 import org.snappy.NullSet
-import org.snappy.SnappyColumn
-import org.snappy.SnappyRow
+import org.snappy.annotations.SnappyColumn
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KVisibility

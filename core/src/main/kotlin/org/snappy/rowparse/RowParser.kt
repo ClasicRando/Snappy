@@ -1,7 +1,5 @@
 package org.snappy.rowparse
 
-import org.snappy.SnappyRow
-
 /**
  * Main interface allowing [java.sql.ResultSet] objects to be parsed into a more meaningful type
  * [T]. Declaring a [RowParser] type signifies that the type [T] can be extracted from a
@@ -24,7 +22,6 @@ interface RowParser<T> {
      * reason since the implementor might specify their own checks within the parsing, it's failures
      * can be seen below.
      *
-     * @exception NullRowValue not-null assertion on field parsing failed
      * @exception IllegalStateException expected state of the data within the [row], this generally
      * happens when an exception is thrown from a call to [check]
      * @exception IllegalArgumentException argument(s) to [T] constructor is the wrong type
