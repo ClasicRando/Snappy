@@ -8,10 +8,4 @@ package org.snappy.decode
 fun interface Decoder<T> {
     /** Convert a boxed return [value] from a [java.sql.ResultSet] into the desired custom type */
     fun decode(value: Any): T
-    fun decodeNullable(value: Any?): T? {
-        if (value == null) {
-            return null
-        }
-        return decode(value)
-    }
 }

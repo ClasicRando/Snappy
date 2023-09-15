@@ -20,7 +20,6 @@ import kotlin.reflect.full.createType
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.full.withNullability
-import kotlin.reflect.jvm.jvmErasure
 import kotlin.reflect.typeOf
 
 class DecoderCache internal constructor(private val config: SnappyConfig) {
@@ -38,33 +37,32 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
         cache
     }
 
+    internal val defaultDecoder = Decoder { it }
+
     /**
      * Get a [Decoder] for the provided [rowType]. Checks the [decoderCache] for an existing parser
-     * and returns immediately if it exists. Otherwise, a [CannotFindDecodeValueType] exception is
-     * thrown
+     * and returns immediately if it exists. Otherwise, the default decoder is returned.
      */
     @PublishedApi
-    internal fun getOrThrow(rowType: KType): Decoder<*> {
-        return decoderCache[rowType]
-            ?: throw cannotFindDecodeValueType(rowType.jvmErasure)
+    internal fun getOrDefault(rowType: KType): Decoder<*> {
+        return decoderCache[rowType] ?: defaultDecoder
     }
 
     /**
      * Get a [Decoder] for the provided type [T]. Checks the [decoderCache] for an existing parser
-     * and returns immediately if it exists. Otherwise, a [CannotFindDecodeValueType] exception is
-     * thrown
+     * and returns immediately if it exists. Otherwise, the default decoder is returned.
      */
-    inline fun <reified T : Any> getOrThrow(): Decoder<T> {
-        return getOrThrow(typeOf<T>()) as Decoder<T>
+    inline fun <reified T : Any> getOrDefault(): Decoder<T> {
+        return getOrDefault(typeOf<T>()) as Decoder<T>
     }
 
     /**
-     * Get a [Decoder] for the provided type [T]. Checks the [decoderCache] for an existing
+     * Get a [Decoder] for the provided type [rowType]. Checks the [decoderCache] for an existing
      * parser and returns immediately if it exists. Otherwise, it returns null
      */
     @PublishedApi
-    internal fun <T : Any> getOrNull(rowType: KType): Decoder<T>? {
-        return decoderCache[rowType] as? Decoder<T>
+    internal fun getOrNull(rowType: KType): Decoder<*>? {
+        return decoderCache[rowType]
     }
 
     /**
@@ -72,14 +70,13 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
      * parser and returns immediately if it exists. Otherwise, it returns null
      */
     inline fun <reified T : Any> getOrNull(): Decoder<T>? {
-        return getOrNull(typeOf<T>())
+        return getOrNull(typeOf<T>()) as Decoder<T>?
     }
 
     /** Add or replace an existing parser with a new [parser] for the [rowType] specified */
     @PublishedApi
     internal fun <T> insertOrReplace(rowType: KType, parser: Decoder<T>) {
-        decoderCache[rowType] = parser
-        decoderCache[rowType.withNullability(!rowType.isMarkedNullable)] = parser
+        decoderCache[rowType.withNullability(false)] = parser
     }
 
     /** Add or replace an existing parser with a new [parser] for the [T] specified */
@@ -105,7 +102,7 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
      */
     private fun processAllAutoCacheClasses(result: ScanResult) = sequence {
         for (classInfo in result.getClassesWithAnnotation(SnappyCacheDecoder::class.java)) {
-            yieldAll(processClassInfoForCache(result, classInfo))
+            yield(processClassInfoForCache(result, classInfo))
         }
     }
 
@@ -117,21 +114,19 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
     private fun processClassInfoForCache(
         result: ScanResult,
         classInfo: ClassInfo,
-    ) = sequence {
+    ): Pair<KType, Decoder<*>> {
         val cls = classInfo.loadClass()
         val kClass = cls.kotlin
         if (decoderInterfaceClass.isAssignableFrom(cls)) {
-            yieldAll(parseDecoder(result, classInfo, kClass as KClass<Decoder<*>>))
-            return@sequence
+            return parseDecoder(result, classInfo, kClass as KClass<Decoder<*>>)
         }
         kClass.companionObject?.let { companion ->
             if (companion.isSubclassOf(decoderInterfaceKClass)) {
-                yieldAll(parseDecoder(
+                return parseDecoder(
                     result,
                     result.getClassInfo(companion.java.name),
                     companion as KClass<Decoder<*>>
-                ))
-                return@sequence
+                )
             }
         }
         if (kClass.isValue) {
@@ -142,8 +137,7 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
                     decodeError(kClass, value)
                 }
             }
-            yield(kClass.createType(nullable = false) to decoder)
-            yield(kClass.createType(nullable = true) to decoder)
+            return kClass.createType(nullable = false) to decoder
         }
         throw cannotFindDecodeValueType(kClass)
     }
@@ -158,7 +152,7 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
         scanResult: ScanResult,
         classInfo: ClassInfo,
         kClass: KClass<Decoder<*>>,
-    ) = sequence {
+    ): Pair<KType, Decoder<*>> {
         val valueTypeName = classInfo.typeSignature
             .superinterfaceSignatures
             .first { it.fullyQualifiedClassName == decoderInterfaceClass.name }
@@ -189,7 +183,6 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
         } catch (_: IllegalArgumentException) {
             throw NoDefaultConstructor(valueClass)
         }
-        yield(valueClass.createType(nullable = false) to decoder)
-        yield(valueClass.createType(nullable = true) to decoder)
+        return valueClass.createType(nullable = false) to decoder
     }
 }

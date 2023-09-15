@@ -3,7 +3,6 @@ package org.snappy.rowparse
 import org.snappy.NullSet
 import org.snappy.SnappyMapper
 import org.snappy.annotations.SnappyColumn
-import org.snappy.decodeError
 import org.snappy.invalidDataClassConstructorCall
 import kotlin.reflect.KClass
 import kotlin.reflect.full.memberProperties
@@ -41,13 +40,16 @@ class DataClassParser<T : Any>(rowClass: KClass<T>) : RowParser<T> {
         .asSequence()
         .map { parameter ->
             val name = propertyAnnotations[parameter.name!!] ?: parameter.name!!
-            val decoder = SnappyMapper.decoderCache.getOrThrow(parameter.type)
-            name to  { value: Any? ->
-                decoder.decodeNullable(value) ?: if (parameter.type.isMarkedNullable) {
-                    null
-                } else {
-                    throw NullSet(parameter.name!!)
+            val decoder = SnappyMapper.decoderCache.getOrNull(parameter.type)
+            Pair(name) { value: Any? ->
+                if (value == null) {
+                    if (parameter.type.isMarkedNullable) {
+                        return@Pair null
+                    } else {
+                        throw NullSet(parameter.name!!)
+                    }
                 }
+                decoder?.decode(value) ?: value
             }
         }
         .toList()
@@ -59,6 +61,10 @@ class DataClassParser<T : Any>(rowClass: KClass<T>) : RowParser<T> {
             }
             decoder(row.get(name))
         }.toTypedArray()
-        return constructor.call(*parameters)
+        return try {
+            constructor.call(*parameters)
+        } catch (_: IllegalArgumentException) {
+            invalidDataClassConstructorCall(parameterNames.map { it.first }, row)
+        }
     }
 }

@@ -29,13 +29,16 @@ class DecoderCacheTest {
     }
 
     @Test
-    fun `getOrDefault should populate cache when no parser present`() {
+    fun `getOrDefault should return default parser when no parser present`() {
         val existingParser = decoderCache.getOrNull<CacheMissDecoderClass>()
         assertNull(existingParser)
 
-        decoderCache.getOrThrow<CacheMissDecoderClass>()
+        decoderCache.getOrDefault<CacheMissDecoderClass>()
 
         val populatedCache = decoderCache.getOrNull<CacheMissDecoderClass>()
-        assertNotNull(populatedCache)
+        assertNull(populatedCache)
+
+        val defaultDecoder = decoderCache.getOrDefault<CacheMissDecoderClass>()
+        assertTrue(defaultDecoder === decoderCache.defaultDecoder)
     }
 }
