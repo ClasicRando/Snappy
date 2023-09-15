@@ -9,6 +9,7 @@ import org.snappy.NoDefaultConstructor
 import org.snappy.annotations.SnappyCacheRowParser
 import org.snappy.SnappyConfig
 import org.snappy.annotations.SnappyCacheDecoder
+import org.snappy.cannotFindDecodeValueType
 import org.snappy.decodeError
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
@@ -18,8 +19,8 @@ import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.primaryConstructor
+import kotlin.reflect.full.withNullability
 import kotlin.reflect.jvm.jvmErasure
-import kotlin.reflect.safeCast
 import kotlin.reflect.typeOf
 
 class DecoderCache internal constructor(private val config: SnappyConfig) {
@@ -38,25 +39,23 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
     }
 
     /**
-     * Get a [Decoder] for the provided type [T]. Checks the [decoderCache] for an existing
-     * parser and returns immediately if it exists. Otherwise, adds a new default parser for the
-     * required [rowType] and returns that new parser.
+     * Get a [Decoder] for the provided [rowType]. Checks the [decoderCache] for an existing parser
+     * and returns immediately if it exists. Otherwise, a [CannotFindDecodeValueType] exception is
+     * thrown
      */
     @PublishedApi
-    internal fun <T : Any> getOrDefault(rowType: KType): Decoder<T> {
-        val cachedResult = decoderCache.getOrPut(rowType) {
-            generateDefaultDecoder(rowType.jvmErasure)
-        }
-        return cachedResult as Decoder<T>
+    internal fun getOrThrow(rowType: KType): Decoder<*> {
+        return decoderCache[rowType]
+            ?: throw cannotFindDecodeValueType(rowType.jvmErasure)
     }
 
     /**
-     * Get a [Decoder] for the provided type [T]. Checks the [decoderCache] for an existing
-     * parser and returns immediately if it exists. Otherwise, adds a new default parser for the
-     * required [T] and returns that new parser.
+     * Get a [Decoder] for the provided type [T]. Checks the [decoderCache] for an existing parser
+     * and returns immediately if it exists. Otherwise, a [CannotFindDecodeValueType] exception is
+     * thrown
      */
-    inline fun <reified T : Any> getOrDefault(): Decoder<T> {
-        return getOrDefault(typeOf<T>())
+    inline fun <reified T : Any> getOrThrow(): Decoder<T> {
+        return getOrThrow(typeOf<T>()) as Decoder<T>
     }
 
     /**
@@ -80,6 +79,7 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
     @PublishedApi
     internal fun <T> insertOrReplace(rowType: KType, parser: Decoder<T>) {
         decoderCache[rowType] = parser
+        decoderCache[rowType.withNullability(!rowType.isMarkedNullable)] = parser
     }
 
     /** Add or replace an existing parser with a new [parser] for the [T] specified */
@@ -134,8 +134,18 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
                 return@sequence
             }
         }
-        yield(kClass.createType(nullable = false) to generateDefaultDecoder(kClass))
-        yield(kClass.createType(nullable = true) to generateDefaultDecoder(kClass))
+        if (kClass.isValue) {
+            val decoder = Decoder { value ->
+                try {
+                    kClass.primaryConstructor!!.call(value)
+                } catch (_: IllegalArgumentException) {
+                    decodeError(kClass, value)
+                }
+            }
+            yield(kClass.createType(nullable = false) to decoder)
+            yield(kClass.createType(nullable = true) to decoder)
+        }
+        throw cannotFindDecodeValueType(kClass)
     }
 
     /**
@@ -156,18 +166,18 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
             .first()
             .typeSignature
             .toString()
-        var valueCls = scanResult.getClassInfo(valueTypeName)
-        if (valueCls == null) {
-            valueCls = ClassGraph().enableAllInfo().acceptClasses(valueTypeName).scan().use {
+        var valueClassInfo = scanResult.getClassInfo(valueTypeName)
+        if (valueClassInfo == null) {
+            valueClassInfo = ClassGraph().enableAllInfo().acceptClasses(valueTypeName).scan().use {
                 it.getClassInfo(valueTypeName)
             }
         }
-        val valueClass = when {
-            valueCls == null && valueTypeName.startsWith("java.") -> {
+        val valueClass = if (valueClassInfo == null) {
+            runCatching {
                 DecoderCache::class.java.classLoader.loadClass(valueTypeName)
-            }
-            valueCls != null -> valueCls.loadClass()
-            else -> throw CannotFindDecodeValueType(valueTypeName)
+            }.getOrNull() ?: throw CannotFindDecodeValueType(valueTypeName)
+        } else {
+            valueClassInfo.loadClass()
         }.kotlin
         val decoder = try {
             if (kClass.isCompanion) {
@@ -179,27 +189,7 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
         } catch (_: IllegalArgumentException) {
             throw NoDefaultConstructor(valueClass)
         }
-        yield(valueClass.createType() to decoder)
-    }
-
-    /** Create a new default decoder for the [valueClass] provided */
-    private fun <T : Any> generateDefaultDecoder(valueType: KType): Decoder<T> {
-        val valueClass = valueType.jvmErasure
-        if (valueClass.isValue) {
-            Decoder { value ->
-                try {
-                    valueClass.primaryConstructor!!.call(value)
-                } catch (_: IllegalArgumentException) {
-                    decodeError(valueClass, value)
-                }
-            }
-        }
-        return Decoder { value ->
-            if (valueType.isMarkedNullable && value == null) {
-                return@Decoder null
-            }
-            val valueCast = valueClass.safeCast(value) ?: decodeError(valueClass, value)
-            valueCast as T?
-        }
+        yield(valueClass.createType(nullable = false) to decoder)
+        yield(valueClass.createType(nullable = true) to decoder)
     }
 }

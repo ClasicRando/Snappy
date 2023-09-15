@@ -33,7 +33,7 @@ class DecoderCacheTest {
         val existingParser = decoderCache.getOrNull<CacheMissDecoderClass>()
         assertNull(existingParser)
 
-        decoderCache.getOrDefault<CacheMissDecoderClass>()
+        decoderCache.getOrThrow<CacheMissDecoderClass>()
 
         val populatedCache = decoderCache.getOrNull<CacheMissDecoderClass>()
         assertNotNull(populatedCache)

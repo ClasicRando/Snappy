@@ -35,7 +35,7 @@ class NoMoreResults
     : Throwable("Attempted to access more results from a statement that has already been exhausted")
 
 class NullSet(name: String)
-    : Throwable("Attempted to call a setter of a non-null field, '$name', with a null value")
+    : Throwable("Attempted to set value of a non-null property, '$name', with a null value")
 
 class MismatchSet(prop: KProperty<*>, cls: KClass<*>) : Throwable(
     "Attempted to call a setter to a field, '${prop.name}', with the wrong value type. " +
@@ -48,7 +48,7 @@ class NoDefaultConstructor(cls: KClass<*>)
 class InvalidDataClassConstructorCall(message: String) : Throwable(message)
 
 internal fun invalidDataClassConstructorCall(
-    parameterNames: List<Pair<String, KType>>,
+    parameterNames: List<String>,
     row: SnappyRow,
 ): Nothing {
     val displayRows = row.entries.joinToString("\n        ") { (key, value) ->
@@ -56,7 +56,7 @@ internal fun invalidDataClassConstructorCall(
     }
     val message = """
         Attempted to call a data class constructor with invalid parameter types.
-        Parameter Names: ${parameterNames.joinToString { it.first }}
+        Parameter Names: ${parameterNames.joinToString()}
         Row:
         $displayRows
     """.trimIndent()
@@ -75,9 +75,19 @@ class DecodeError(decodeClassName: String?, value: Any?, valueType: String?) : T
     "Failed to decode value of type '$valueType' into '$decodeClassName', Value: $value"
 )
 
+inline fun <reified T> decodeError(value: Any?): Nothing {
+    decodeError(T::class, value)
+}
+
 fun decodeError(decodeClass: KClass<*>, value: Any?): Nothing {
     throw DecodeError(decodeClass.qualifiedName, value, value?.let { it::class.qualifiedName })
 }
 
 class CannotFindDecodeValueType(typeName: String)
     : Exception("Cannot find decode value type '$typeName'")
+
+internal fun cannotFindDecodeValueType(kClass: KClass<*>): CannotFindDecodeValueType {
+    return CannotFindDecodeValueType(
+        kClass.qualifiedName ?: kClass.simpleName ?: kClass.toString()
+    )
+}

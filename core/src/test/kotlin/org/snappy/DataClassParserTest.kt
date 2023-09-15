@@ -65,7 +65,7 @@ class DataClassParserTest {
         )
         val row = SnappyRow(rowData)
 
-        assertThrows<DecodeError> { simpleDataClassParser.parseRow(row) }
+        assertThrows<InvalidDataClassConstructorCall> { simpleDataClassParser.parseRow(row) }
     }
 
     @Test

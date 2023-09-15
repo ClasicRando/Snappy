@@ -7,6 +7,14 @@ import java.sql.Time
 import java.sql.Timestamp
 import java.time.Instant
 
+/** Wrapper for [Boolean] to allow for encoding to a [PreparedStatement] */
+@JvmInline
+private value class SqlBoolean(private val boolean: Boolean) : Encode {
+    override fun encode(preparedStatement: PreparedStatement, parameterIndex: Int) {
+        preparedStatement.setBoolean(parameterIndex, boolean)
+    }
+}
+
 /** Wrapper for [Byte] to allow for encoding to a [PreparedStatement] */
 @JvmInline
 private value class SqlByte(private val byte: Byte) : Encode {
@@ -110,6 +118,7 @@ private value class SqlByteArray(private val byteArray: ByteArray) : Encode {
  */
 fun toEncodable(input: Any?): Encode = when (input) {
     is Encode -> input
+    is Boolean -> SqlBoolean(input)
     is Byte -> SqlByte(input)
     is Short -> SqlShort(input)
     is Int -> SqlInt(input)
