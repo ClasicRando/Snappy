@@ -5,7 +5,6 @@ import org.snappy.NoDefaultConstructor
 import org.snappy.NullSet
 import org.snappy.SnappyMapper
 import org.snappy.annotations.SnappyColumn
-import java.lang.reflect.InvocationTargetException
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KVisibility
