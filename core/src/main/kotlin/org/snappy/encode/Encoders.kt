@@ -1,6 +1,9 @@
 package org.snappy.encode
 
 import java.math.BigDecimal
+import java.sql.Array
+import java.sql.Blob
+import java.sql.Clob
 import java.sql.Date
 import java.sql.PreparedStatement
 import java.sql.Time
@@ -111,6 +114,30 @@ private value class SqlByteArray(private val byteArray: ByteArray) : Encode {
     }
 }
 
+/** Wrapper for [Clob] to allow for encoding to a [PreparedStatement] */
+@JvmInline
+private value class SqlClob(private val clob: Clob) : Encode {
+    override fun encode(preparedStatement: PreparedStatement, parameterIndex: Int) {
+        preparedStatement.setClob(parameterIndex, clob)
+    }
+}
+
+/** Wrapper for [Blob] to allow for encoding to a [PreparedStatement] */
+@JvmInline
+private value class SqlBlob(private val blob: Blob) : Encode {
+    override fun encode(preparedStatement: PreparedStatement, parameterIndex: Int) {
+        preparedStatement.setBlob(parameterIndex, blob)
+    }
+}
+
+/** Wrapper for [Array] to allow for encoding to a [PreparedStatement] */
+@JvmInline
+private value class SqlArray(private val array: Array) : Encode {
+    override fun encode(preparedStatement: PreparedStatement, parameterIndex: Int) {
+        preparedStatement.setArray(parameterIndex, array)
+    }
+}
+
 /**
  * Convert an [input] object to a wrapper value that implements [Encode] for
  * [java.sql.PreparedStatement] parameter binding. If [input] is already a value that implements
@@ -132,6 +159,9 @@ fun toEncodable(input: Any?): Encode = when (input) {
     is Time -> SqlTime(input)
     is String -> SqlString(input)
     is ByteArray -> SqlByteArray(input)
+    is Clob -> SqlClob(input)
+    is Blob -> SqlBlob(input)
+    is Array -> SqlArray(input)
     else -> Encode { preparedStatement, parameterIndex ->
         preparedStatement.setObject(parameterIndex, input)
     }

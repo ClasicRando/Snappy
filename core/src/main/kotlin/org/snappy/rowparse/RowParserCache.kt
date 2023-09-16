@@ -105,30 +105,35 @@ class RowParserCache internal constructor(private val config: SnappyConfig) {
      */
     private fun processAllAutoCacheClasses(result: ScanResult) = sequence {
         for (classInfo in result.getClassesWithAnnotation(SnappyCacheRowParser::class.java)) {
-            yield(processClassInfoForCache(result, classInfo))
+            processClassInfoForCache(classInfo)?.let { yield(it) }
+        }
+        for (classInfo in result.getClassesImplementing(RowParser::class.java)) {
+            if (classInfo.name == "org.snappy.rowparse.DataClassParser"
+                || classInfo.name == "org.snappy.rowparse.DefaultRowParser") {
+                continue
+            }
+            val cls = classInfo.loadClass()
+            val kClass = cls.kotlin
+            yield(createRowParserClass(result, classInfo, kClass as KClass<RowParser<*>>))
         }
     }
 
     /**
-     * Process a [classInfo] instance annotated with [SnappyCacheRowParser] to insert a [RowParser]
+     * Process a [classInfo] instance annotated with [SnappyCacheRowParser] to insert a [RowParser].
+     * If the class itself is already a [RowParser] or the companion object is a [RowParser] then
+     * null is returned since the second pass of the results will cover those classes.
      *
      * @see SnappyCacheRowParser
      */
-    private fun processClassInfoForCache(
-        result: ScanResult,
-        classInfo: ClassInfo,
-    ): Pair<KType, RowParser<*>> {
+    private fun processClassInfoForCache(classInfo: ClassInfo): Pair<KType, RowParser<*>>? {
         val cls = classInfo.loadClass()
         val kClass = cls.kotlin
         if (rowParserInterfaceClass.isAssignableFrom(cls)) {
-            return insertRowParserClass(result, classInfo, kClass as KClass<RowParser<*>>)
+            return null
         }
         kClass.companionObject?.let { companion ->
             if (companion.isSubclassOf(rowParserInterfaceKClass)) {
-                return insertRowParserClass(
-                    result,
-                    result.getClassInfo(companion.java.name),
-                    companion as KClass<RowParser<*>>)
+                return null
             }
         }
         return kClass.createType() to generateDefaultParser(kClass)
@@ -140,7 +145,7 @@ class RowParserCache internal constructor(private val config: SnappyConfig) {
      *
      * @see SnappyCacheRowParser
      */
-    private fun insertRowParserClass(
+    private fun createRowParserClass(
         scanResult: ScanResult,
         classInfo: ClassInfo,
         kClass: KClass<RowParser<*>>,
@@ -151,9 +156,13 @@ class RowParserCache internal constructor(private val config: SnappyConfig) {
             .typeArguments
             .first()
             .typeSignature
-        val rowClass = scanResult.getClassInfo(rowType.toString())
-            .loadClass()
-            .kotlin
+        val rowClass = try {
+            scanResult.getClassInfo(rowType.toString())
+                .loadClass()
+                .kotlin
+        } catch (ex: Exception) {
+            throw ex
+        }
         val rowParser = try {
             if (kClass.isCompanion) {
                 kClass.objectInstance

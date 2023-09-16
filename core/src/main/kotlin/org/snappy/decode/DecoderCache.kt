@@ -6,19 +6,12 @@ import io.github.classgraph.ClassInfo
 import io.github.classgraph.ScanResult
 import org.snappy.CannotFindDecodeValueType
 import org.snappy.NoDefaultConstructor
-import org.snappy.annotations.SnappyCacheRowParser
 import org.snappy.SnappyConfig
-import org.snappy.annotations.SnappyCacheDecoder
-import org.snappy.cannotFindDecodeValueType
-import org.snappy.decodeError
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
-import kotlin.reflect.full.companionObject
 import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.createType
-import kotlin.reflect.full.isSubclassOf
-import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.full.withNullability
 import kotlin.reflect.typeOf
 
@@ -35,25 +28,6 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
         }
         cacheLoaded = true
         cache
-    }
-
-    internal val defaultDecoder = Decoder { it }
-
-    /**
-     * Get a [Decoder] for the provided [rowType]. Checks the [decoderCache] for an existing parser
-     * and returns immediately if it exists. Otherwise, the default decoder is returned.
-     */
-    @PublishedApi
-    internal fun getOrDefault(rowType: KType): Decoder<*> {
-        return decoderCache[rowType] ?: defaultDecoder
-    }
-
-    /**
-     * Get a [Decoder] for the provided type [T]. Checks the [decoderCache] for an existing parser
-     * and returns immediately if it exists. Otherwise, the default decoder is returned.
-     */
-    inline fun <reified T : Any> getOrDefault(): Decoder<T> {
-        return getOrDefault(typeOf<T>()) as Decoder<T>
     }
 
     /**
@@ -97,56 +71,20 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
     private val decoderInterfaceClass = decoderInterfaceKClass.java
 
     /**
-     * Yield pairs of a [KType] and [Decoder] to initialize the cache with classes marked as
-     * [SnappyCacheDecoder]
+     * Yield pairs of a [KType] and [Decoder] to initialize the cache with classes implementing
+     * [Decoder]
      */
     private fun processAllAutoCacheClasses(result: ScanResult) = sequence {
-        for (classInfo in result.getClassesWithAnnotation(SnappyCacheDecoder::class.java)) {
-            yield(processClassInfoForCache(result, classInfo))
+        for (classInfo in result.getClassesImplementing(Decoder::class.java)) {
+            val cls = classInfo.loadClass()
+            val kClass = cls.kotlin
+            yield(parseDecoder(result, classInfo, kClass as KClass<Decoder<*>>))
         }
-    }
-
-    /**
-     * Process a [classInfo] instance annotated with [SnappyCacheDecoder] to insert a [Decoder]
-     *
-     * @see SnappyCacheDecoder
-     */
-    private fun processClassInfoForCache(
-        result: ScanResult,
-        classInfo: ClassInfo,
-    ): Pair<KType, Decoder<*>> {
-        val cls = classInfo.loadClass()
-        val kClass = cls.kotlin
-        if (decoderInterfaceClass.isAssignableFrom(cls)) {
-            return parseDecoder(result, classInfo, kClass as KClass<Decoder<*>>)
-        }
-        kClass.companionObject?.let { companion ->
-            if (companion.isSubclassOf(decoderInterfaceKClass)) {
-                return parseDecoder(
-                    result,
-                    result.getClassInfo(companion.java.name),
-                    companion as KClass<Decoder<*>>
-                )
-            }
-        }
-        if (kClass.isValue) {
-            val decoder = Decoder { value ->
-                try {
-                    kClass.primaryConstructor!!.call(value)
-                } catch (_: IllegalArgumentException) {
-                    decodeError(kClass, value)
-                }
-            }
-            return kClass.createType(nullable = false) to decoder
-        }
-        throw cannotFindDecodeValueType(kClass)
     }
 
     /**
      * Process and return a [Decoder] for the specified [kClass], using reflection to get the row
      * type for cache insertion.
-     *
-     * @see SnappyCacheRowParser
      */
     private fun parseDecoder(
         scanResult: ScanResult,
@@ -160,12 +98,10 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
             .first()
             .typeSignature
             .toString()
-        var valueClassInfo = scanResult.getClassInfo(valueTypeName)
-        if (valueClassInfo == null) {
-            valueClassInfo = ClassGraph().enableAllInfo().acceptClasses(valueTypeName).scan().use {
+        val valueClassInfo = scanResult.getClassInfo(valueTypeName)
+            ?: ClassGraph().enableAllInfo().acceptClasses(valueTypeName).scan().use {
                 it.getClassInfo(valueTypeName)
             }
-        }
         val valueClass = if (valueClassInfo == null) {
             runCatching {
                 DecoderCache::class.java.classLoader.loadClass(valueTypeName)

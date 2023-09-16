@@ -1,7 +1,7 @@
 package org.snappy
 
 import org.snappy.data.CacheMissDecoderClass
-import org.snappy.data.DecoderClass
+import org.snappy.data.CompanionObjectDecoder
 import org.snappy.data.RowClass
 import org.snappy.decode.DecoderCache
 import java.time.Instant
@@ -16,7 +16,7 @@ class DecoderCacheTest {
 
     @Test
     fun `insertOrReplace should populate cache when valid parser class`() {
-        decoderCache.insertOrReplace<RowClass>(DecoderClass())
+        decoderCache.insertOrReplace<RowClass> { RowClass("") }
     }
 
     @Test
@@ -24,21 +24,13 @@ class DecoderCacheTest {
         decoderCache.loadCache()
         assertTrue(decoderCache.cacheLoaded)
 
-        val populatedCache = decoderCache.getOrNull<Instant>()
-        assertNotNull(populatedCache)
+        assertNotNull(decoderCache.getOrNull<Instant>())
+        assertNotNull(decoderCache.getOrNull<CompanionObjectDecoder>())
     }
 
     @Test
-    fun `getOrDefault should return default parser when no parser present`() {
+    fun `getOrDefault should return null when no parser present`() {
         val existingParser = decoderCache.getOrNull<CacheMissDecoderClass>()
         assertNull(existingParser)
-
-        decoderCache.getOrDefault<CacheMissDecoderClass>()
-
-        val populatedCache = decoderCache.getOrNull<CacheMissDecoderClass>()
-        assertNull(populatedCache)
-
-        val defaultDecoder = decoderCache.getOrDefault<CacheMissDecoderClass>()
-        assertTrue(defaultDecoder === decoderCache.defaultDecoder)
     }
 }

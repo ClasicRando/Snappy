@@ -1,6 +1,5 @@
 package org.snappy.decode
 
-import org.snappy.annotations.SnappyCacheDecoder
 import org.snappy.decodeError
 import java.sql.Timestamp
 import java.time.Instant
@@ -8,7 +7,6 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-@SnappyCacheDecoder
 class InstantDecoder : Decoder<Instant> {
     override fun decode(value: Any): Instant {
         return when (value) {

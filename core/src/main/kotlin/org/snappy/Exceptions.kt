@@ -84,9 +84,3 @@ fun decodeError(decodeClass: KClass<*>, value: Any?): Nothing {
 
 class CannotFindDecodeValueType(typeName: String)
     : Exception("Cannot find decode value type '$typeName'")
-
-internal fun cannotFindDecodeValueType(kClass: KClass<*>): CannotFindDecodeValueType {
-    return CannotFindDecodeValueType(
-        kClass.qualifiedName ?: kClass.simpleName ?: kClass.toString()
-    )
-}
