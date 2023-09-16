@@ -1,10 +1,13 @@
-package org.snappy.extensions
+package org.snappy.query
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.snappy.RowParser
-import org.snappy.RowParserCache
-import org.snappy.StatementType
+import org.snappy.rowparse.RowParser
+import org.snappy.SnappyMapper
+import org.snappy.statement.StatementType
+import org.snappy.extensions.columNames
+import org.snappy.extensions.getStatement
+import org.snappy.extensions.toSnappyRow
 import java.sql.Connection
 
 /**
@@ -54,7 +57,7 @@ inline fun <reified T : Any> Connection.query(
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
 ): Sequence<T> {
-    val rowParser = RowParserCache.getOrDefault<T>()
+    val rowParser = SnappyMapper.rowParserCache.getOrDefault<T>()
     return queryImpl(this, rowParser, sql, parameters, statementType, timeout)
 }
 

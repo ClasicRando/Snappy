@@ -3,34 +3,38 @@ package org.snappy
 import org.snappy.data.AnnotatedTestClass
 import org.snappy.data.CacheMissClass
 import org.snappy.data.CompanionObjectParser
+import org.snappy.rowparse.RowParserCache
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class RowParserCacheTest {
+    private val config = SnappyConfig(mutableListOf("org.snappy"))
+    private val rowParserCache = RowParserCache(config)
+
     @Test
     fun `insertOrReplace should populate cache when valid parser class`() {
-        RowParserCache.insertOrReplace<CompanionObjectParser>(CompanionObjectParser.Companion)
+        rowParserCache.insertOrReplace<CompanionObjectParser>(CompanionObjectParser.Companion)
     }
 
     @Test
     fun `rowParserCache should be auto populated with auto cache classes`() {
-        RowParserCache.loadCache()
-        assertTrue(RowParserCache.cacheLoaded)
+        rowParserCache.loadCache()
+        assertTrue(rowParserCache.cacheLoaded)
 
-        val populatedCache = RowParserCache.getOrNull<AnnotatedTestClass>()
+        val populatedCache = rowParserCache.getOrNull<AnnotatedTestClass>()
         assertNotNull(populatedCache)
     }
 
     @Test
     fun `getOrDefault should populate cache when no parser present`() {
-        val existingParser = RowParserCache.getOrNull<CacheMissClass>()
+        val existingParser = rowParserCache.getOrNull<CacheMissClass>()
         assertNull(existingParser)
 
-        RowParserCache.getOrDefault<CacheMissClass>()
+        rowParserCache.getOrDefault<CacheMissClass>()
 
-        val populatedCache = RowParserCache.getOrNull<CacheMissClass>()
+        val populatedCache = rowParserCache.getOrNull<CacheMissClass>()
         assertNotNull(populatedCache)
     }
 }

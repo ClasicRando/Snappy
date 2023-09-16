@@ -2,9 +2,9 @@ package org.snappy
 
 import org.junit.jupiter.api.assertThrows
 import org.snappy.extensions.asTransaction
-import org.snappy.extensions.execute
-import org.snappy.extensions.querySingle
-import org.snappy.extensions.querySingleOrNull
+import org.snappy.execute.execute
+import org.snappy.query.querySingle
+import org.snappy.query.querySingleOrNull
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager

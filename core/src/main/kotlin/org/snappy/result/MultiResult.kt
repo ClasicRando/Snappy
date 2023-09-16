@@ -1,7 +1,11 @@
-package org.snappy
+package org.snappy.result
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.snappy.EmptyResult
+import org.snappy.NoMoreResults
+import org.snappy.SnappyMapper
+import org.snappy.TooManyRows
 import org.snappy.extensions.columNames
 import org.snappy.extensions.toSnappyRow
 import java.sql.ResultSet
@@ -50,7 +54,7 @@ class MultiResult(private val statement: Statement) : AutoCloseable {
     inline fun <reified T : Any> readNext(): Sequence<T> = sequence {
         moveNextResult()
         checkNotNull(resultSet)
-        val rowParser = RowParserCache.getOrDefault<T>()
+        val rowParser = SnappyMapper.rowParserCache.getOrDefault<T>()
         resultSet?.use { rs ->
             while (rs.next()) {
                 val row = rs.toSnappyRow(rs.columNames)
@@ -94,7 +98,7 @@ class MultiResult(private val statement: Statement) : AutoCloseable {
     inline fun <reified T : Any> readNextSingleOrNull(): T? {
         moveNextResult()
         checkNotNull(resultSet)
-        val rowParser = RowParserCache.getOrDefault<T>()
+        val rowParser = SnappyMapper.rowParserCache.getOrDefault<T>()
         return resultSet?.use { rs ->
             if (rs.next()) {
                 val row = rs.toSnappyRow(rs.columNames)
@@ -186,7 +190,7 @@ class MultiResult(private val statement: Statement) : AutoCloseable {
     inline fun <reified T : Any> readNextFirstOrNull(): T? {
         moveNextResult()
         checkNotNull(resultSet)
-        val rowParser = RowParserCache.getOrDefault<T>()
+        val rowParser = SnappyMapper.rowParserCache.getOrDefault<T>()
         return resultSet?.use { rs ->
             if (rs.next()) {
                 val row = rs.toSnappyRow(rs.columNames)

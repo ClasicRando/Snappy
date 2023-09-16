@@ -5,6 +5,8 @@ import org.junit.jupiter.api.assertThrows
 import org.snappy.data.AnnotatedTestClass
 import org.snappy.data.NonEmptyConstructorTestClass
 import org.snappy.data.SimpleTestClass
+import org.snappy.rowparse.DefaultRowParser
+import org.snappy.rowparse.SnappyRow
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

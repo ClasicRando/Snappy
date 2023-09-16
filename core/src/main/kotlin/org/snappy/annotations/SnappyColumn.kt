@@ -1,4 +1,4 @@
-package org.snappy
+package org.snappy.annotations
 
 /**
  * Attach this annotation to properties that have another name in the [java.sql.ResultSet] returned

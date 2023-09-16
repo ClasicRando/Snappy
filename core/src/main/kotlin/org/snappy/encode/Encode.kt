@@ -1,12 +1,13 @@
-package org.snappy
+package org.snappy.encode
 
 import java.sql.PreparedStatement
 
 /**
  * Interface for denoting a type is encodable into a [PreparedStatement] parameter. This allows the
- * type to be implicitly wrapped into a [SqlParameter.In] and encoded using the logic found within
- * [encode]. This interface is also a functional interface to allow for easy one off implementations
- * of [Encode] without specifying an anonymous object implementing the interface.
+ * type to be implicitly wrapped into a [SqlParameter.In][org.snappy.statement.SqlParameter.In] and
+ * encoded using the logic found within [encode]. This interface is also a functional interface to
+ * allow for easy one off implementations of [Encode] without specifying an anonymous object
+ * implementing the interface.
  */
 fun interface Encode {
     /**

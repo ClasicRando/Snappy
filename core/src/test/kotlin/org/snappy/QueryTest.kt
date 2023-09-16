@@ -2,7 +2,7 @@ package org.snappy
 
 import org.junit.jupiter.api.assertThrows
 import org.snappy.data.SimpleTestClass
-import org.snappy.extensions.query
+import org.snappy.query.query
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager

@@ -1,10 +1,15 @@
 package org.snappy
 
+import org.snappy.rowparse.SnappyRow
+import java.lang.Exception
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.jvmErasure
 
-/** Exception thrown when a [org.snappy.SqlParameter.Out] is used outside a procedure call */
+/**
+ * Exception thrown when a [SqlParameter.Out][org.snappy.statement.SqlParameter.Out] is used outside
+ * a procedure call
+ */
 class OutParameterOutsideProcedure
     : Throwable("Attempted to use an OUT parameter in a PreparedStatement")
 
@@ -28,12 +33,8 @@ class EmptyResult : Throwable("Expected result to contain rows but none were fou
 class NoMoreResults
     : Throwable("Attempted to access more results from a statement that has already been exhausted")
 
-/** Exception thrown when parsing a [SnappyRow] using [SnappyRow.getAs] but the value was null */
-class NullRowValue(name: String)
-    : Throwable("Assertion of a non-null value when parsing a row for key '$name' failed")
-
 class NullSet(name: String)
-    : Throwable("Attempted to call a setter of a non-null field, '$name', with a null value")
+    : Throwable("Attempted to set value of a non-null property, '$name', with a null value")
 
 class MismatchSet(prop: KProperty<*>, cls: KClass<*>) : Throwable(
     "Attempted to call a setter to a field, '${prop.name}', with the wrong value type. " +
@@ -48,7 +49,7 @@ class InvalidDataClassConstructorCall(message: String) : Throwable(message)
 internal fun invalidDataClassConstructorCall(
     parameterNames: List<String>,
     row: SnappyRow,
-): InvalidDataClassConstructorCall {
+): Nothing {
     val displayRows = row.entries.joinToString("\n        ") { (key, value) ->
         "    $key: $value (${value?.let { it::class.qualifiedName}})"
     }
@@ -58,7 +59,7 @@ internal fun invalidDataClassConstructorCall(
         Row:
         $displayRows
     """.trimIndent()
-    return InvalidDataClassConstructorCall(message)
+    throw InvalidDataClassConstructorCall(message)
 }
 
 class BatchExecutionFailed(sql: String, batchNumber: UInt) : Throwable(
@@ -68,3 +69,18 @@ class BatchExecutionFailed(sql: String, batchNumber: UInt) : Throwable(
         SQL: ${"\n" + sql.replaceIndent("        ")}
     """.trimIndent()
 )
+
+class DecodeError(decodeClassName: String?, value: Any?, valueType: String?) : Throwable(
+    "Failed to decode value of type '$valueType' into '$decodeClassName', Value: $value"
+)
+
+inline fun <reified T> decodeError(value: Any?): Nothing {
+    decodeError(T::class, value)
+}
+
+fun decodeError(decodeClass: KClass<*>, value: Any?): Nothing {
+    throw DecodeError(decodeClass.qualifiedName, value, value?.let { it::class.qualifiedName })
+}
+
+class CannotFindDecodeValueType(typeName: String)
+    : Exception("Cannot find decode value type '$typeName'")
