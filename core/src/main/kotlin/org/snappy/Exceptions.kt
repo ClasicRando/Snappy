@@ -4,6 +4,7 @@ import org.snappy.rowparse.SnappyRow
 import java.lang.Exception
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
+import kotlin.reflect.KType
 import kotlin.reflect.jvm.jvmErasure
 
 /**
@@ -84,3 +85,7 @@ fun decodeError(decodeClass: KClass<*>, value: Any?): Nothing {
 
 class CannotFindDecodeValueType(typeName: String)
     : Exception("Cannot find decode value type '$typeName'")
+
+class TypeArgumentMismatch(kClass: KClass<*>, kType: KType) : Throwable(
+    "Decoder type , '$kType' has a different number of type arguments then the erased class $kClass"
+)

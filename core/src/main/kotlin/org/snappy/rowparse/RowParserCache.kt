@@ -8,6 +8,8 @@ import io.github.classgraph.ScanResult
 import org.snappy.NoDefaultConstructor
 import org.snappy.annotations.SnappyCacheRowParser
 import org.snappy.SnappyConfig
+import org.snappy.decode.Decoder
+import org.snappy.logging.logger
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
@@ -23,18 +25,34 @@ import kotlin.reflect.typeOf
  * allow for multiple threads to access the cache at once.
  */
 class RowParserCache internal constructor(private val config: SnappyConfig) {
+    /** [KLogger][io.github.oshai.kotlinlogging.KLogger] for this cache instance */
+    private val log by logger()
     /** Internally used flag to indicate if the cache has been loaded */
     internal var cacheLoaded: Boolean = false
         private set
     /** Map of an output type linked to a [RowParser] */
-    private val rowParserCache: ConcurrentHashMap<KType, RowParser<*>> by lazy {
+    private val rowParserCache: ConcurrentHashMap<KType, RowParser<*>> by lazy { initCache() }
+
+    private fun initCache(): ConcurrentHashMap<KType, RowParser<*>> {
+        val start = System.currentTimeMillis()
         val cache = ConcurrentHashMap<KType, RowParser<*>>()
-        val packages = config.basePackages.toTypedArray()
+        val packages = config.packages.toTypedArray()
         ClassGraph().enableAllInfo().acceptPackages(*packages).scan().use { result ->
-            processAllAutoCacheClasses(result).toMap(cache)
+            for((type, decoder) in processAllAutoCacheClasses(result)) {
+                if (cache.contains(type)) {
+                    log.warn {
+                        "Multiple decoders exist for type '$type'. The latest one seen is kept"
+                    }
+                }
+                cache[type] = decoder
+            }
         }
         cacheLoaded = true
-        cache
+        val end = System.currentTimeMillis()
+        log.info {
+            "RowParser cache has been initialized. Took %.2f seconds".format((end - start)/1000.0)
+        }
+        return cache
     }
 
     /**
@@ -97,7 +115,6 @@ class RowParserCache internal constructor(private val config: SnappyConfig) {
     }
 
     private val rowParserInterfaceKClass = RowParser::class
-    private val rowParserInterfaceClass = rowParserInterfaceKClass.java
 
     /**
      * Yield pairs of a [KType] and [RowParser] to initialize the cache with classes marked as
@@ -120,7 +137,7 @@ class RowParserCache internal constructor(private val config: SnappyConfig) {
             }
             val cls = classInfo.loadClass()
             val kClass = cls.kotlin
-            yield(createRowParserClass(result, classInfo, kClass as KClass<RowParser<*>>))
+            yield(createRowParserClass(kClass as KClass<RowParser<*>>))
         }
     }
 
@@ -132,9 +149,8 @@ class RowParserCache internal constructor(private val config: SnappyConfig) {
      * @see SnappyCacheRowParser
      */
     private fun processClassInfoForCache(classInfo: ClassInfo): Pair<KType, RowParser<*>>? {
-        val cls = classInfo.loadClass()
-        val kClass = cls.kotlin
-        if (rowParserInterfaceClass.isAssignableFrom(cls)) {
+        val kClass = classInfo.loadClass().kotlin
+        if (rowParserInterfaceKClass.isSubclassOf(kClass)) {
             return null
         }
         kClass.companionObject?.let { companion ->
@@ -151,24 +167,13 @@ class RowParserCache internal constructor(private val config: SnappyConfig) {
      *
      * @see SnappyCacheRowParser
      */
-    private fun createRowParserClass(
-        scanResult: ScanResult,
-        classInfo: ClassInfo,
-        kClass: KClass<RowParser<*>>,
-    ): Pair<KType, RowParser<*>> {
-        val rowType = classInfo.typeSignature
-            .superinterfaceSignatures
-            .first { it.fullyQualifiedClassName == rowParserInterfaceClass.name }
-            .typeArguments
+    private fun createRowParserClass(kClass: KClass<RowParser<*>>): Pair<KType, RowParser<*>> {
+        val valueClassTypeArgument = kClass.supertypes
+            .first { it.jvmErasure.isSubclassOf(rowParserInterfaceKClass) }
+            .arguments
             .first()
-            .typeSignature
-        val rowClass = try {
-            scanResult.getClassInfo(rowType.toString())
-                .loadClass()
-                .kotlin
-        } catch (ex: Exception) {
-            throw ex
-        }
+            .type!!
+        val valueClass = valueClassTypeArgument.jvmErasure
         val rowParser = try {
             if (kClass.isCompanion) {
                 kClass.objectInstance
@@ -177,9 +182,11 @@ class RowParserCache internal constructor(private val config: SnappyConfig) {
                 kClass.createInstance()
             }
         } catch (_: IllegalArgumentException) {
-            throw NoDefaultConstructor(rowClass)
+            throw NoDefaultConstructor(valueClass)
         }
-        return rowClass.createType() to rowParser
+        return valueClass.createType(
+            arguments = valueClassTypeArgument.arguments
+        ) to rowParser
     }
 
     /** Create a new default parser for the [rowClass] provided */

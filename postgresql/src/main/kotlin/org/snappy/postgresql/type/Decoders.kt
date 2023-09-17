@@ -8,6 +8,7 @@ import org.postgresql.geometric.PGpath
 import org.postgresql.geometric.PGpoint
 import org.postgresql.geometric.PGpolygon
 import org.postgresql.util.PGInterval
+import org.postgresql.util.PGmoney
 import org.postgresql.util.PGobject
 import org.snappy.decodeError
 import kotlin.reflect.KClass
@@ -94,6 +95,17 @@ class PgPolygonDecoder : PgObjectDecoder<PGpolygon> {
 
     override fun decodePgObject(pgObject: PGobject): PGpolygon {
         if (pgObject is PGpolygon) {
+            return pgObject
+        }
+        decodeError(decodeClass, pgObject)
+    }
+}
+
+class PgMoneyDecoder : PgObjectDecoder<PGmoney> {
+    override val decodeClass: KClass<PGmoney> = PGmoney::class
+
+    override fun decodePgObject(pgObject: PGobject): PGmoney {
+        if (pgObject is PGmoney) {
             return pgObject
         }
         decodeError(decodeClass, pgObject)

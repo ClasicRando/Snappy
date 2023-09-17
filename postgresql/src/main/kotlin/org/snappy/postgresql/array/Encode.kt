@@ -86,8 +86,7 @@ inline fun <reified T> List<T>.toPgArray(connection: PGConnection): Encode {
                 ?: listClass.simpleName
                 ?: listClass.jvmName
             val objectCollection = this.asSequence()
-                .map { it as ToPgObject }
-                .map { it.toPgObject() }
+                .map { (it as ToPgObject).toPgObject() }
             val array = connection.createArrayOf(typeName, objectCollection)
             return Encode { preparedStatement, parameterIndex ->
                 preparedStatement.setArray(parameterIndex, array)

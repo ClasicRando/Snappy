@@ -13,9 +13,9 @@ object SnappyMapper {
             val text = file.readText()
             Json.decodeFromString<SnappyConfig>(text)
         } else {
-            SnappyConfig(basePackages = mutableListOf())
+            SnappyConfig(packages = mutableListOf())
         }
-        config.basePackages.add("org.snappy")
+        config.packages.add("org.snappy")
         config
     }
 
@@ -31,6 +31,10 @@ object SnappyMapper {
     fun loadCache() {
         rowParserCache.loadCache()
         decoderCache.loadCache()
+    }
+
+    fun temp() {
+        println(decoderCache.cache.entries.joinToString("\n") { "${it.key} -> ${it.value}" })
     }
 
     init { loadCache() }
