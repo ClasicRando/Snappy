@@ -30,6 +30,25 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
         cache
     }
 
+    internal val defaultDecoder = Decoder { it }
+
+    /**
+     * Get a [Decoder] for the provided type [rowType]. Checks the [decoderCache] for an existing
+     * parser and returns immediately if it exists. Otherwise, it returns null
+     */
+    @PublishedApi
+    internal fun getOrDefault(rowType: KType): Decoder<*> {
+        return decoderCache[rowType] ?: defaultDecoder
+    }
+
+    /**
+     * Get a [Decoder] for the provided type [T]. Checks the [decoderCache] for an existing
+     * parser and returns immediately if it exists. Otherwise, it returns null
+     */
+    inline fun <reified T : Any> getOrDefault(): Decoder<*> {
+        return getOrDefault(typeOf<T>())
+    }
+
     /**
      * Get a [Decoder] for the provided type [rowType]. Checks the [decoderCache] for an existing
      * parser and returns immediately if it exists. Otherwise, it returns null
@@ -76,6 +95,9 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
      */
     private fun processAllAutoCacheClasses(result: ScanResult) = sequence {
         for (classInfo in result.getClassesImplementing(Decoder::class.java)) {
+            if (classInfo.isAbstract) {
+                continue
+            }
             val cls = classInfo.loadClass()
             val kClass = cls.kotlin
             yield(parseDecoder(result, classInfo, kClass as KClass<Decoder<*>>))

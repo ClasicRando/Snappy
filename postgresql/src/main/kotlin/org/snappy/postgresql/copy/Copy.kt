@@ -87,7 +87,10 @@ fun PGConnection.copyIn(
     return copyIn(copyCommand, inputStream)
 }
 
-internal fun PGConnection.copyIn(copyCommand: String, records: Sequence<Iterable<String>>): Long {
+internal fun PGConnection.copyInInternal(
+    copyCommand: String,
+    records: Sequence<Iterable<String>>,
+): Long {
     val copyStream = copyAPI.copyIn(copyCommand)
     return try {
         for (record in records) {
@@ -101,11 +104,11 @@ internal fun PGConnection.copyIn(copyCommand: String, records: Sequence<Iterable
     }
 }
 
-fun <T : IntoCsvRow> PGConnection.copyIn(copyCommand: String, records: Sequence<T>): Long {
-    return copyIn(copyCommand, records.map { it.intoCsvRow() })
+fun <T : IntoCsvRow> PGConnection.copyInCsv(copyCommand: String, records: Sequence<T>): Long {
+    return copyInInternal(copyCommand, records.map { it.intoCsvRow() })
 }
 
-fun <T : IntoCsvRow> PGConnection.copyIn(
+fun <T : IntoCsvRow> PGConnection.copyInCsv(
     records: Sequence<T>,
     tableName: String,
     header: Boolean,
@@ -114,17 +117,17 @@ fun <T : IntoCsvRow> PGConnection.copyIn(
     qualified: Boolean = true,
 ): Long {
     val copyCommand = getCopyCommand(tableName, header, columNames, delimiter, qualified)
-    return copyIn(copyCommand, records)
+    return copyInCsv(copyCommand, records)
 }
 
-fun <T : IntoCsvRow> PGConnection.copyIn(
+fun <T : IntoCsvRow> PGConnection.copyInCsv(
     copyCommand: String,
     records: suspend SequenceScope<T>.() -> Unit,
 ): Long {
-    return copyIn(copyCommand, sequence { records() }.map { it.intoCsvRow() })
+    return copyInInternal(copyCommand, sequence { records() }.map { it.intoCsvRow() })
 }
 
-fun <T : IntoCsvRow> PGConnection.copyIn(
+fun <T : IntoCsvRow> PGConnection.copyInCsv(
     tableName: String,
     header: Boolean,
     columNames: List<String>,
@@ -133,17 +136,17 @@ fun <T : IntoCsvRow> PGConnection.copyIn(
     records: suspend SequenceScope<T>.() -> Unit,
 ): Long {
     val copyCommand = getCopyCommand(tableName, header, columNames, delimiter, qualified)
-    return copyIn(copyCommand, records)
+    return copyInCsv(copyCommand, records)
 }
 
-fun <T : IntoObjectRow> PGConnection.copyIn(copyCommand: String, records: Sequence<T>): Long {
-    return copyIn(
+fun <T : IntoObjectRow> PGConnection.copyInRow(copyCommand: String, records: Sequence<T>): Long {
+    return copyInInternal(
         copyCommand,
         records.map { record -> record.intoObjectRow().map { obj -> formatObject(obj) } },
     )
 }
 
-fun <T : IntoObjectRow> PGConnection.copyIn(
+fun <T : IntoObjectRow> PGConnection.copyInRow(
     records: Sequence<T>,
     tableName: String,
     header: Boolean,
@@ -152,14 +155,14 @@ fun <T : IntoObjectRow> PGConnection.copyIn(
     qualified: Boolean = true,
 ): Long {
     val copyCommand = getCopyCommand(tableName, header, columNames, delimiter, qualified)
-    return copyIn(copyCommand, records)
+    return copyInRow(copyCommand, records)
 }
 
-fun <T : IntoObjectRow> PGConnection.copyIn(
+fun <T : IntoObjectRow> PGConnection.copyInRow(
     copyCommand: String,
     records: suspend SequenceScope<T>.() -> Unit,
 ): Long {
-    return copyIn(
+    return copyInInternal(
         copyCommand,
         sequence {
             records()
@@ -169,7 +172,7 @@ fun <T : IntoObjectRow> PGConnection.copyIn(
     )
 }
 
-fun <T : IntoObjectRow> PGConnection.copyIn(
+fun <T : IntoObjectRow> PGConnection.copyInRow(
     tableName: String,
     header: Boolean,
     columNames: List<String>,
@@ -178,5 +181,5 @@ fun <T : IntoObjectRow> PGConnection.copyIn(
     records: suspend SequenceScope<T>.() -> Unit
 ): Long {
     val copyCommand = getCopyCommand(tableName, header, columNames, delimiter, qualified)
-    return copyIn(copyCommand, records)
+    return copyInRow(copyCommand, records)
 }

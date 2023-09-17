@@ -19,11 +19,9 @@ object SnappyMapper {
         config
     }
 
-    @PublishedApi
-    internal val rowParserCache = RowParserCache(config)
+    val rowParserCache = RowParserCache(config)
 
-    @PublishedApi
-    internal val decoderCache = DecoderCache(config)
+    val decoderCache = DecoderCache(config)
 
     /**
      * Method to ensure the cache is loaded before continuing. This will force the lazy initialized

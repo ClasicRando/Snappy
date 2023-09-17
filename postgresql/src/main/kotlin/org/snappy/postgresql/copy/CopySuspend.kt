@@ -29,7 +29,7 @@ suspend fun PGConnection.copyInSuspend(
     return copyInSuspend(copyCommand, inputStream)
 }
 
-internal suspend fun PGConnection.copyInSuspend(
+internal suspend fun PGConnection.copyInSuspendInternal(
     copyCommand: String,
     records: Flow<Iterable<String>>,
 ): Long = withContext(Dispatchers.IO) {
@@ -46,14 +46,14 @@ internal suspend fun PGConnection.copyInSuspend(
     }
 }
 
-suspend fun <T : IntoCsvRow> PGConnection.copyInSuspend(
+suspend fun <T : IntoCsvRow> PGConnection.copyInCsvSuspend(
     copyCommand: String,
     records: Flow<T>,
 ): Long {
-    return copyInSuspend(copyCommand, records.map { it.intoCsvRow() })
+    return copyInSuspendInternal(copyCommand, records.map { it.intoCsvRow() })
 }
 
-suspend fun <T : IntoCsvRow> PGConnection.copyInSuspend(
+suspend fun <T : IntoCsvRow> PGConnection.copyInCsvSuspend(
     records: Flow<T>,
     tableName: String,
     header: Boolean,
@@ -62,17 +62,17 @@ suspend fun <T : IntoCsvRow> PGConnection.copyInSuspend(
     qualified: Boolean = true,
 ): Long {
     val copyCommand = getCopyCommand(tableName, header, columNames, delimiter, qualified)
-    return copyInSuspend(copyCommand, records)
+    return copyInCsvSuspend(copyCommand, records)
 }
 
-suspend fun <T : IntoCsvRow> PGConnection.copyInSuspend(
+suspend fun <T : IntoCsvRow> PGConnection.copyInCsvSuspend(
     copyCommand: String,
     records: suspend FlowCollector<T>.() -> Unit,
 ): Long {
-    return copyInSuspend(copyCommand, flow { records() }.map { it.intoCsvRow() })
+    return copyInSuspendInternal(copyCommand, flow { records() }.map { it.intoCsvRow() })
 }
 
-suspend fun <T : IntoCsvRow> PGConnection.copyInSuspend(
+suspend fun <T : IntoCsvRow> PGConnection.copyInCsvSuspend(
     tableName: String,
     header: Boolean,
     columNames: List<String>,
@@ -81,20 +81,20 @@ suspend fun <T : IntoCsvRow> PGConnection.copyInSuspend(
     records: suspend FlowCollector<T>.() -> Unit,
 ): Long {
     val copyCommand = getCopyCommand(tableName, header, columNames, delimiter, qualified)
-    return copyInSuspend(copyCommand, records)
+    return copyInCsvSuspend(copyCommand, records)
 }
 
-suspend fun <T : IntoObjectRow> PGConnection.copyInSuspend(
+suspend fun <T : IntoObjectRow> PGConnection.copyInRowSuspend(
     copyCommand: String,
     records: Flow<T>,
 ): Long {
-    return copyInSuspend(
+    return copyInSuspendInternal(
         copyCommand,
         records.map { record -> record.intoObjectRow().map { obj -> formatObject(obj) } },
     )
 }
 
-suspend fun <T : IntoObjectRow> PGConnection.copyInSuspend(
+suspend fun <T : IntoObjectRow> PGConnection.copyInRowSuspend(
     records: Flow<T>,
     tableName: String,
     header: Boolean,
@@ -103,14 +103,14 @@ suspend fun <T : IntoObjectRow> PGConnection.copyInSuspend(
     qualified: Boolean = true,
 ): Long {
     val copyCommand = getCopyCommand(tableName, header, columNames, delimiter, qualified)
-    return copyInSuspend(copyCommand, records)
+    return copyInRowSuspend(copyCommand, records)
 }
 
-suspend fun <T : IntoObjectRow> PGConnection.copyInSuspend(
+suspend fun <T : IntoObjectRow> PGConnection.copyInRowSuspend(
     copyCommand: String,
     records: suspend FlowCollector<T>.() -> Unit,
 ): Long {
-    return copyInSuspend(
+    return copyInSuspendInternal(
         copyCommand,
         flow {
             records()
@@ -120,7 +120,7 @@ suspend fun <T : IntoObjectRow> PGConnection.copyInSuspend(
     )
 }
 
-suspend fun <T : IntoObjectRow> PGConnection.copyInSuspend(
+suspend fun <T : IntoObjectRow> PGConnection.copyInRowSuspend(
     tableName: String,
     header: Boolean,
     columNames: List<String>,
@@ -129,5 +129,5 @@ suspend fun <T : IntoObjectRow> PGConnection.copyInSuspend(
     records: suspend FlowCollector<T>.() -> Unit
 ): Long {
     val copyCommand = getCopyCommand(tableName, header, columNames, delimiter, qualified)
-    return copyInSuspend(copyCommand, records)
+    return copyInRowSuspend(copyCommand, records)
 }

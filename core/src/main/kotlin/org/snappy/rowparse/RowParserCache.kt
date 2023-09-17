@@ -105,9 +105,15 @@ class RowParserCache internal constructor(private val config: SnappyConfig) {
      */
     private fun processAllAutoCacheClasses(result: ScanResult) = sequence {
         for (classInfo in result.getClassesWithAnnotation(SnappyCacheRowParser::class.java)) {
+            if (classInfo.isAbstract) {
+                continue
+            }
             processClassInfoForCache(classInfo)?.let { yield(it) }
         }
         for (classInfo in result.getClassesImplementing(RowParser::class.java)) {
+            if (classInfo.isAbstract) {
+                continue
+            }
             if (classInfo.name == "org.snappy.rowparse.DataClassParser"
                 || classInfo.name == "org.snappy.rowparse.DefaultRowParser") {
                 continue
