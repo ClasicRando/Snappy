@@ -1,20 +1,16 @@
+val kotlinReflectVersion: String by project
+val kotlinTestVersion: String by project
+val junitVersion: String by project
+val postgresqlJdbcVersion: String by project
+val mockkVersion: String by project
+
 dependencies {
     implementation(project(":core"))
-    implementation(kotlin("reflect"))
-    // https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-coroutines-core
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-    // https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-serialization-core-jvm
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.6.0")
-    // https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-serialization-json-jvm
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.6.0")
+    implementation(kotlin("reflect", version = kotlinReflectVersion))
     // https://mvnrepository.com/artifact/org.postgresql/postgresql
-    implementation("org.postgresql:postgresql:42.6.0")
-    // https://mvnrepository.com/artifact/io.github.classgraph/classgraph
-    implementation("io.github.classgraph:classgraph:4.8.162")
+    implementation("org.postgresql:postgresql:$postgresqlJdbcVersion")
 
-    testImplementation(kotlin("test"))
-    testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
-    testImplementation("io.mockk:mockk:1.13.7")
-    // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
-    testImplementation("org.xerial:sqlite-jdbc:3.43.0.0")
+    testImplementation(kotlin("test", version = kotlinTestVersion))
+    testImplementation("org.junit.jupiter:junit-jupiter:$junitVersion")
+    testImplementation("io.mockk:mockk:$mockkVersion")
 }

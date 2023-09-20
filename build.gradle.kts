@@ -19,10 +19,25 @@ subprojects {
         jvmToolchain(11)
     }
 
+    val coroutineVersion: String by project
+    val kotlinLoggingVersion: String by project
+    val slfj4Version: String by project
+    val logbackVersion: String by project
+    val kotlinxSerializationVersion: String by project
+    val classGraphVersion: String by project
+
     dependencies {
-        implementation("ch.qos.logback:logback-classic:1.4.11")
-        implementation("org.slf4j:slf4j-api:2.0.9")
-        implementation("io.github.oshai:kotlin-logging-jvm:5.1.0")
+        implementation("ch.qos.logback:logback-classic:$logbackVersion")
+        implementation("org.slf4j:slf4j-api:$slfj4Version")
+        implementation("io.github.oshai:kotlin-logging-jvm:$kotlinLoggingVersion")
+        // https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-coroutines-core
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutineVersion")
+        // https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-serialization-core-jvm
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:$kotlinxSerializationVersion")
+        // https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-serialization-json-jvm
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:$kotlinxSerializationVersion")
+        // https://mvnrepository.com/artifact/io.github.classgraph/classgraph
+        implementation("io.github.classgraph:classgraph:$classGraphVersion")
     }
 
     tasks.test {
