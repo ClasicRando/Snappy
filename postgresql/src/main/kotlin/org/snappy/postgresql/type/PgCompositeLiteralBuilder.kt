@@ -13,62 +13,79 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-class PgCompositeLiteralBuilder {
-    @PublishedApi
-    internal val stringBuilder = StringBuilder().apply {
+class PgCompositeLiteralBuilder() {
+    private val stringBuilder = StringBuilder().apply {
         append('(')
     }
 
-    @PublishedApi
-    internal fun prependCommaIfNeeded() {
+    /** Returns a new string with the required control characters for arrays escaped */
+    private fun replaceInArray(value: String?): String? {
+        return value?.replace("\\", "\\\\")?.replace("\"", "\\\"")
+    }
+
+    /** Returns a new string with the required control characters for composites escaped */
+    private fun replaceInComposite(value: String?): String? {
+        return value?.replace("\\", "\\\\")?.replace("\"", "\"\"")
+    }
+
+    private fun prependCommaIfNeeded() {
         if (stringBuilder.length == 1) {
             return
         }
         stringBuilder.append(',')
     }
 
-    fun <C : ToPgObject> appendComposite(composite: C): PgCompositeLiteralBuilder {
+    fun <C : ToPgObject> appendComposite(composite: C?): PgCompositeLiteralBuilder {
         prependCommaIfNeeded()
-        val pgObject = composite.toPgObject()
-        stringBuilder.apply {
-            append('"')
-            append('(')
-            append(pgObject.value?.replace("\"", "\"\""))
-            append(')')
-            append('"')
+        composite?.let { comp ->
+            val pgObject = comp.toPgObject()
+            stringBuilder.apply {
+                append('"')
+                append(replaceInComposite(pgObject.value))
+                append('"')
+            }
+        }
+        return this
+    }
+
+    fun <T> appendIterable(iterable: Iterable<T>?): PgCompositeLiteralBuilder {
+        prependCommaIfNeeded()
+        iterable?.let { iter ->
+            stringBuilder.apply {
+                append('"')
+                val isComposite = iter.firstOrNull { it != null }
+                    ?.let { it is ToPgObject }
+                    ?: false
+                val arrayString = iter.joinToString(
+                    separator = if (isComposite) "\",\"" else ",",
+                    prefix = if (isComposite) "{\"" else "{",
+                    postfix = if (isComposite) "\"}" else "}",
+                ) { item ->
+                    if (item == null) {
+                        return@joinToString ""
+                    }
+                    val element = when (item) {
+                        is ToPgObject -> item.toPgObject().value ?: ""
+                        is Time -> localTimeFormatter.format(item.toLocalTime())
+                        is Date -> localDateFormatter.format(item.toLocalDate())
+                        is Timestamp -> "\"${instantFormatter.format(item.toInstant())}\""
+                        is LocalTime -> localTimeFormatter.format(item)
+                        is LocalDate -> localDateFormatter.format(item)
+                        is LocalDateTime -> "\"${localDateTimeFormatter.format(item)}\""
+                        is Instant -> "\"${instantFormatter.format(item)}\""
+                        else -> item.toString()
+                    }
+                    replaceInArray(element) ?: ""
+                }
+                append(replaceInComposite(arrayString))
+                append('"')
+            }
         }
         return this
     }
 
     fun <T> appendArray(array: Array<T>?): PgCompositeLiteralBuilder {
-        prependCommaIfNeeded()
-        array?.let { arr ->
-            stringBuilder.apply {
-                append('"')
-                append('{')
-                val arrayString = arr.joinToString(",", prefix = "{", postfix = "}") {
-                    if (it == null) {
-                        return@joinToString ""
-                    }
-                    val element = when (it) {
-                        is ToPgObject -> it.toPgObject().value ?: ""
-                        is Time -> localTimeFormatter.format(it.toLocalTime())
-                        is Date -> localDateFormatter.format(it.toLocalDate())
-                        is Timestamp -> instantFormatter.format(it.toInstant())
-                        is LocalTime -> localTimeFormatter.format(it)
-                        is LocalDate -> localDateFormatter.format(it)
-                        is LocalDateTime -> localDateTimeFormatter.format(it)
-                        is Instant -> instantFormatter.format(it)
-                        else -> it.toString()
-                    }
-                    element.replace("\"", "\"\"").replace("\\", "\\\\")
-                }
-                append(arrayString.replace("\"", "\"\"").replace("\\", "\\\\"))
-                append('}')
-                append('"')
-            }
-        }
-        return this
+        return appendIterable(array?.asIterable())
     }
 
     fun appendBoolean(bool: Boolean?): PgCompositeLiteralBuilder {
