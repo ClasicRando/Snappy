@@ -20,12 +20,8 @@ class BlockingListener<C>(
 {
     private val log by logger()
     init {
-        require(!connection.isClosed) {
-            "Cannot listen to a closed connection"
-        }
-        require(!listenChannel.matches(Regex("^[a-z][a-z0-9_]+$", RegexOption.IGNORE_CASE))) {
-            "Listen Channel name must be valid identifier"
-        }
+        require(!connection.isClosed) { "Cannot listen to a closed connection" }
+        validateChannelName(listenChannel)
     }
     private val blockingQueue: BlockingQueue<PGNotification> = ArrayBlockingQueue(buffer.toInt())
     private val running = AtomicBoolean(false)

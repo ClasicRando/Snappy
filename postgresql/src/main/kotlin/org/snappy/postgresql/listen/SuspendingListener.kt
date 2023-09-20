@@ -37,12 +37,8 @@ class SuspendingListener<C>(
 {
     private val log by logger()
     init {
-        require(!connection.isClosed) {
-            "Cannot listen to a closed connection"
-        }
-        require(!listenChannel.matches(Regex("^[a-z][a-z0-9_]+$", RegexOption.IGNORE_CASE))) {
-            "Listen Channel name must be valid identifier"
-        }
+        require(!connection.isClosed) { "Cannot listen to a closed connection" }
+        validateChannelName(listenChannel)
     }
     private val channel = Channel<PGNotification>(buffer.toInt())
     private val job = scope.launch(context = Dispatchers.IO) {
