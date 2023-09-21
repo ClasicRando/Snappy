@@ -4,9 +4,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.snappy.EmptyResult
 import org.snappy.statement.StatementType
-import org.snappy.extensions.columNames
+import org.snappy.extensions.columnNames
 import org.snappy.extensions.getStatement
-import org.snappy.extensions.toSnappyRow
+import org.snappy.rowparse.SnappyRowImpl
+import org.snappy.rowparse.getObjectNullable
 import java.sql.Connection
 import kotlin.reflect.KClass
 
@@ -31,8 +32,8 @@ internal fun <T : Any> queryScalarImpl(
     return connection.getStatement(sql, parameters, statementType, timeout).use { preparedStatement ->
         preparedStatement.executeQuery().use { rs ->
             if (rs.next()) {
-                val row = rs.toSnappyRow(rs.columNames)
-                row.getAs(rs.metaData.getColumnName(1), scalarValueClass)
+                val row = SnappyRowImpl(rs, rs.columnNames)
+                row.getObjectNullable(rs.metaData.getColumnName(1), scalarValueClass.java)
             } else {
                 null
             }

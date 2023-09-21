@@ -1,11 +1,15 @@
 package org.snappy
 
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.snappy.data.AnnotatedTestDataClass
 import org.snappy.data.SimpleTestDataClass
 import org.snappy.rowparse.DataClassParser
 import org.snappy.rowparse.SnappyRow
+import org.snappy.rowparse.getObjectNullable
+import java.sql.ResultSet
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -34,7 +38,12 @@ class DataClassParserTest {
             "floatField" to floatData,
             "nullField" to nullData,
         )
-        val row = SnappyRow(rowData)
+        val row = mockk<SnappyRow>()
+        every { row.containsKey(any()) } returns false
+        for ((key, value) in rowData) {
+            every { row.containsKey(key) } returns true
+            every { row.getAnyNullable(key) } returns value
+        }
         val result = simpleDataClassParser.parseRow(row)
 
         assertEquals(result.stringField, stringData)
@@ -55,7 +64,7 @@ class DataClassParserTest {
         val intData = 23
         val longData = 5896L
         val doubleData = 52.63
-        val rowData = mapOf(
+        val rowData = mapOf<String, Any>(
             "stringField" to stringData,
             "booleanField" to booleanData,
             "shortField" to shortData,
@@ -63,7 +72,13 @@ class DataClassParserTest {
             "longField" to longData,
             "doubleField" to doubleData,
         )
-        val row = SnappyRow(rowData)
+        val row = mockk<SnappyRow>()
+        every { row.containsKey(any()) } returns false
+        every { row.entries } returns sequenceOf()
+        for ((key, value) in rowData) {
+            every { row.containsKey(key) } returns true
+            every { row.getAnyNullable(key) } returns value
+        }
 
         assertThrows<InvalidDataClassConstructorCall> { simpleDataClassParser.parseRow(row) }
     }
@@ -72,11 +87,10 @@ class DataClassParserTest {
     fun `fromRow should map row when annotated type`() {
         val stringData = "String Data"
         val longData = 5896L
-        val rowData = mapOf(
-            "simple_name" to stringData,
-            "otherFieldName" to longData,
-        )
-        val row = SnappyRow(rowData)
+        val row = mockk<SnappyRow>()
+        every { row.containsKey(any()) } returns true
+        every { row.getAnyNullable("simple_name") } returns stringData
+        every { row.getAnyNullable("otherFieldName") } returns longData
 
         val result = assertDoesNotThrow { annotatedDataClassParser.parseRow(row) }
 

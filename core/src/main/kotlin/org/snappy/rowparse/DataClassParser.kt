@@ -50,7 +50,7 @@ class DataClassParser<T : Any>(rowClass: KClass<T>) : RowParser<T> {
             if (!row.containsKey(name)) {
                 invalidDataClassConstructorCall(parameterNames.map { it.first }, row)
             }
-            decoder.decodeWithType(parameter.type, parameter.name!!, row.get(name))
+            decoder.decodeWithType(parameter.type, parameter.name!!, row.getAnyNullable(name))
         }.toTypedArray()
         return try {
             constructor.call(*parameters)

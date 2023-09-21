@@ -65,7 +65,11 @@ class DefaultRowParser<T : Any>(private val rowClass: KClass<T>) : RowParser<T> 
         properties.asSequence()
             .filter { (name, _, _) -> row.containsKey(name) }
             .forEach { (name, prop, decoder) ->
-                val value = decoder.decodeWithType(prop.returnType, prop.name, row.get(name))
+                val value = decoder.decodeWithType(
+                    prop.returnType,
+                    prop.name,
+                    row.getAnyNullable(name),
+                )
                 try {
                     prop.setter.call(newInstance, value)
                 } catch (_: IllegalArgumentException) {

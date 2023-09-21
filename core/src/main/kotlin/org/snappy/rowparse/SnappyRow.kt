@@ -1,73 +1,92 @@
 package org.snappy.rowparse
 
-import org.snappy.MissingField
-import org.snappy.NullSet
-import org.snappy.WrongFieldType
-import org.snappy.wrongFieldType
-import kotlin.reflect.KClass
-import kotlin.reflect.safeCast
+import java.math.BigDecimal
+import java.sql.Array
+import java.sql.Date
+import java.sql.Time
+import java.sql.Timestamp
 
 /**
  * Internal representation of a row from a [java.sql.ResultSet] to not expose the result to a user.
  * Access of data is through the field name.
  */
-class SnappyRow(private val data: Map<String, Any?>) {
+interface SnappyRow {
 
     /** Number of columns in the row */
-    val size: Int = data.size
+    val size: Int
     /** Read-only view of the row entries */
-    val entries: Sequence<Map.Entry<String, Any?>> = data.asSequence()
+    val entries: Sequence<Pair<String, Any?>>
 
     /** Check if a row contains the specified [key] */
-    fun containsKey(key: String) = data.containsKey(key)
+    fun containsKey(key: String): Boolean
+    
+    fun getStringNullable(key: String): String?
 
-    /**
-     * Get the value associated with the [key] as [T] or null if the underlining value is null
-     *
-     * @exception WrongFieldType when the value is not of type [T]
-     */
-    inline fun <reified T : Any> getAs(key: String): T? {
-        return getAs(key, T::class)
-    }
+    fun getString(key: String): String
 
-    /**
-     * Get the value associated with the [key] as [T] or null if the underlining value is null
-     *
-     * @exception WrongFieldType when the value is not of type [T]
-     */
-    @PublishedApi
-    internal fun <T : Any> getAs(key: String, returnType: KClass<T>): T? {
-        if (!containsKey(key)) {
-            throw MissingField(key)
-        }
-        val value = data[key] ?: return null
-        return returnType.safeCast(value) ?: wrongFieldType(key, returnType.simpleName, value)
-    }
+    fun getBooleanNullable(key: String): Boolean?
 
-    /**
-     * Get the value associated with the [key] as [T] or null if the underlining value is null
-     *
-     * @exception WrongFieldType when the value is not of type [T]
-     */
-    inline fun <reified T : Any> getAsNotNull(key: String): T {
-        return getAsNotNull(key, T::class)
-    }
+    fun getBoolean(key: String): Boolean
 
-    /**
-     * Get the value associated with the [key] as [T] or null if the underlining value is null
-     *
-     * @exception WrongFieldType when the value is not of type [T]
-     */
-    @PublishedApi
-    internal fun <T : Any> getAsNotNull(key: String, returnType: KClass<T>): T {
-        if (!containsKey(key)) {
-            throw MissingField(key)
-        }
-        val value = data[key]
-            ?: throw IllegalStateException("Expected field '$key' to be not null")
-        return returnType.safeCast(value) ?: wrongFieldType(key, returnType.simpleName, value)
-    }
+    fun getByteNullable(key: String): Byte?
 
-    /** Get the value associated with the [key] */
-    fun get(key: String): Any? = data[key]
+    fun getByte(key: String): Byte
+
+    fun getShortNullable(key: String): Short?
+
+    fun getShort(key: String): Short
+
+    fun getIntNullable(key: String): Int?
+
+    fun getInt(key: String): Int
+
+    fun getLongNullable(key: String): Long?
+
+    fun getLong(key: String): Long
+
+    fun getFloatNullable(key: String): Float?
+
+    fun getFloat(key: String): Float
+
+    fun getDoubleNullable(key: String): Double?
+
+    fun getDouble(key: String): Double
+
+    fun getBigDecimalNullable(key: String): BigDecimal?
+
+    fun getBigDecimal(key: String): BigDecimal
+
+    fun getBytesNullable(key: String): ByteArray?
+
+    fun getBytes(key: String): ByteArray
+
+    fun getDateNullable(key: String): Date?
+
+    fun getDate(key: String): Date
+
+    fun getTimeNullable(key: String): Time?
+
+    fun getTime(key: String): Time
+
+    fun getTimestampNullable(key: String): Timestamp?
+
+    fun getTimestamp(key: String): Timestamp
+
+    fun getAnyNullable(key: String): Any?
+
+    fun getAny(key: String): Any
+
+    fun <T : Any?> getObjectNullable(key: String, type: Class<T>): T
+
+    fun <T : Any> getObject(key: String, type: Class<T>): T
+
+    fun getArray(key: String): Array
+}
+
+inline fun <reified T : Any?> SnappyRow.getObjectNullable(key: String): T {
+    return getObjectNullable(key, T::class.java)
+}
+
+inline fun <reified T : Any> SnappyRow.getObject(key: String): T {
+    return getObject(key, T::class.java)
 }

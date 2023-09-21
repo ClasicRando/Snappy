@@ -6,8 +6,8 @@ import org.snappy.EmptyResult
 import org.snappy.NoMoreResults
 import org.snappy.SnappyMapper
 import org.snappy.TooManyRows
-import org.snappy.extensions.columNames
-import org.snappy.extensions.toSnappyRow
+import org.snappy.extensions.columnNames
+import org.snappy.rowparse.SnappyRowImpl
 import java.sql.ResultSet
 import java.sql.Statement
 
@@ -56,8 +56,9 @@ class MultiResult(private val statement: Statement) : AutoCloseable {
         checkNotNull(resultSet)
         val rowParser = SnappyMapper.rowParserCache.getOrDefault<T>()
         resultSet?.use { rs ->
+            val columnNames = rs.columnNames
             while (rs.next()) {
-                val row = rs.toSnappyRow(rs.columNames)
+                val row = SnappyRowImpl(rs, columnNames)
                 yield(rowParser.parseRow(row))
             }
         }
@@ -101,7 +102,7 @@ class MultiResult(private val statement: Statement) : AutoCloseable {
         val rowParser = SnappyMapper.rowParserCache.getOrDefault<T>()
         return resultSet?.use { rs ->
             if (rs.next()) {
-                val row = rs.toSnappyRow(rs.columNames)
+                val row = SnappyRowImpl(rs, rs.columnNames)
                 val mappedRow = rowParser.parseRow(row)
                 if (rs.next()) {
                     throw TooManyRows()
@@ -193,7 +194,7 @@ class MultiResult(private val statement: Statement) : AutoCloseable {
         val rowParser = SnappyMapper.rowParserCache.getOrDefault<T>()
         return resultSet?.use { rs ->
             if (rs.next()) {
-                val row = rs.toSnappyRow(rs.columNames)
+                val row = SnappyRowImpl(rs, rs.columnNames)
                 val mappedRow = rowParser.parseRow(row)
                 mappedRow
             } else {

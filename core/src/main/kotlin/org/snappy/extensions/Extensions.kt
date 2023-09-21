@@ -2,7 +2,6 @@ package org.snappy.extensions
 
 import org.snappy.NullFieldName
 import org.snappy.OutParameterOutsideProcedure
-import org.snappy.rowparse.SnappyRow
 import org.snappy.statement.SqlParameter
 import org.snappy.statement.StatementType
 import java.sql.CallableStatement
@@ -15,19 +14,8 @@ import java.sql.ResultSet
  *
  * @exception NullFieldName should never happen
  */
-val ResultSet.columNames: List<String> get() = (1..this.metaData.columnCount)
+val ResultSet.columnNames: List<String> get() = (1..this.metaData.columnCount)
     .map { index -> this.metaData.getColumnName(index) ?: throw NullFieldName() }
-
-/**
- * Map the current state of [ResultSet] to a [SnappyRow] using the [columns] provided. Note: names
- * specified in [columns] must match the [ResultSet] so the parameter value should be fetched using
- * [ResultSet.columNames].
- */
-@PublishedApi
-internal fun ResultSet.toSnappyRow(columns: List<String>): SnappyRow {
-    val data = columns.associateWith { name -> this.getObject(name) }
-    return SnappyRow(data)
-}
 
 /**
  * Map a [List] of objects into a [List] of [SqlParameter]. Any item within the [List] that is

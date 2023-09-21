@@ -5,7 +5,7 @@ import org.postgresql.util.PGobject
 import org.snappy.postgresql.array.toList
 import org.snappy.rowparse.RowParser
 import org.snappy.rowparse.SnappyRow
-import java.sql.Array
+import org.snappy.rowparse.getObject
 import kotlin.test.assertEquals
 
 data class ComplexCompositeTestResult(
@@ -31,16 +31,16 @@ data class ComplexCompositeTestResult(
     companion object : RowParser<ComplexCompositeTestResult> {
         override fun parseRow(row: SnappyRow): ComplexCompositeTestResult {
             return ComplexCompositeTestResult(
-                textField1 = row.getAsNotNull("text_field_1"),
-                textField2 = row.getAsNotNull("text_field_2"),
-                intField1 = row.getAsNotNull("int_field_1"),
-                intField2 = row.getAsNotNull("int_field_2"),
-                compositeField1 = row.getAsNotNull("composite_field_1"),
-                compositeField2 = row.getAsNotNull("composite_field_2"),
-                intArrayField1 = row.getAsNotNull<Array>("int_array_field_1").toList(),
-                intArrayField2 = row.getAsNotNull<Array>("int_array_field_2").toList(),
-                compositeArrayField1 = row.getAsNotNull<Array>("composite_array_field_1").toList(),
-                compositeArrayField2 = row.getAsNotNull<Array>("composite_array_field_2").toList(),
+                textField1 = row.getString("text_field_1"),
+                textField2 = row.getString("text_field_2"),
+                intField1 = row.getInt("int_field_1"),
+                intField2 = row.getInt("int_field_2"),
+                compositeField1 = row.getObject<PGobject>("composite_field_1"),
+                compositeField2 = row.getObject<PGobject>("composite_field_2"),
+                intArrayField1 = row.getArray("int_array_field_1").toList(),
+                intArrayField2 = row.getArray("int_array_field_2").toList(),
+                compositeArrayField1 = row.getArray("composite_array_field_1").toList(),
+                compositeArrayField2 = row.getArray("composite_array_field_2").toList(),
             )
         }
     }
