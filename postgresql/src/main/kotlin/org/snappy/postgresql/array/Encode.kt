@@ -9,6 +9,11 @@ import java.sql.Date
 import java.sql.Time
 import java.sql.Timestamp
 import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.OffsetDateTime
+import java.time.OffsetTime
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.jvm.jvmName
@@ -55,29 +60,30 @@ fun ByteArray.toPgArray(): Encode {
     }
 }
 
-inline fun <reified T> List<T>.toPgArray(connection: PGConnection): Encode {
+inline fun <reified T> Collection<T>.toPgArray(connection: PGConnection): Encode {
+    return this.toTypedArray().toPgArray(connection)
+}
+
+inline fun <reified T> Array<T>.toPgArray(connection: PGConnection): Encode {
     val typeName = when (val listClass = T::class) {
-        Boolean::class -> return BooleanArray(this.size) { this[it] as Boolean }.toPgArray()
-        Short::class -> return ShortArray(this.size) { this[it] as Short }.toPgArray()
-        Int::class -> return IntArray(this.size) { this[it] as Int }.toPgArray()
-        Long::class -> return LongArray(this.size) { this[it] as Long }.toPgArray()
-        Float::class -> return FloatArray(this.size) { this[it] as Float }.toPgArray()
-        Double::class -> return DoubleArray(this.size) { this[it] as Double }.toPgArray()
-        Byte::class -> return ByteArray(this.size) { this[it] as Byte }.toPgArray()
-        Instant::class -> {
-            val array = connection.createArrayOf(
-                "timestamp",
-                this.map { Timestamp((it as Instant).toEpochMilli()) },
-            )
-            return Encode { preparedStatement, parameterIndex ->
-                preparedStatement.setArray(parameterIndex, array)
-            }
-        }
+        Boolean::class -> "bool"
+        Short::class -> "smallint"
+        Int::class -> "int"
+        Long::class -> "bigint"
+        Float::class -> "float4"
+        Double::class -> "float8"
+        Byte::class -> "bytea"
         String::class -> "text"
         BigDecimal::class -> "numeric"
         Date::class -> "date"
         Timestamp::class -> "timestamp"
         Time::class -> "time"
+        LocalTime::class -> "time"
+        OffsetTime::class -> "timetz"
+        LocalDate::class -> "date"
+        LocalDateTime::class -> "timestamp"
+        OffsetDateTime::class -> "timestamptz"
+        Instant::class -> "timestamptz"
         else -> {
             if (!listClass.isSubclassOf(ToPgObject::class)) {
                 throw CannotEncodeArray(listClass)
@@ -85,53 +91,9 @@ inline fun <reified T> List<T>.toPgArray(connection: PGConnection): Encode {
             val typeName = listClass.findAnnotation<PgType>()?.name
                 ?: listClass.simpleName
                 ?: listClass.jvmName
-            val objectCollection = this.asSequence()
-                .map { (it as ToPgObject).toPgObject() }
-            val array = connection.createArrayOf(typeName, objectCollection)
-            return Encode { preparedStatement, parameterIndex ->
-                preparedStatement.setArray(parameterIndex, array)
+            val objectCollection = Array(this.size) {
+                (this[it] as ToPgObject).toPgObject()
             }
-        }
-    }
-    val array = connection.createArrayOf(typeName, this)
-    return Encode { preparedStatement, parameterIndex ->
-        preparedStatement.setArray(parameterIndex, array)
-    }
-}
-
-inline fun <reified T> Array<T>.toPgArray(connection: PGConnection): Encode {
-    val typeName =  when (val arrayClass = T::class) {
-        Boolean::class -> return BooleanArray(this.size) { this[it] as Boolean }.toPgArray()
-        Short::class -> return ShortArray(this.size) { this[it] as Short }.toPgArray()
-        Int::class -> return IntArray(this.size) { this[it] as Int }.toPgArray()
-        Long::class -> return LongArray(this.size) { this[it] as Long }.toPgArray()
-        Float::class -> return FloatArray(this.size) { this[it] as Float }.toPgArray()
-        Double::class -> return DoubleArray(this.size) { this[it] as Double }.toPgArray()
-        Byte::class -> return ByteArray(this.size) { this[it] as Byte }.toPgArray()
-        Instant::class -> {
-            val array = connection.createArrayOf(
-                "timestamp",
-                this.map { Timestamp((it as Instant).toEpochMilli()) },
-            )
-            return Encode { preparedStatement, parameterIndex ->
-                preparedStatement.setArray(parameterIndex, array)
-            }
-        }
-        String::class -> "text"
-        BigDecimal::class -> "numeric"
-        Date::class -> "date"
-        Timestamp::class -> "timestamp"
-        Time::class -> "time"
-        else -> {
-            if (!arrayClass.isSubclassOf(ToPgObject::class)) {
-                throw CannotEncodeArray(arrayClass)
-            }
-            val typeName = arrayClass.findAnnotation<PgType>()?.name
-                ?: arrayClass.simpleName
-                ?: arrayClass.toString()
-            val objectCollection = this.asSequence()
-                .map { it as ToPgObject }
-                .map { it.toPgObject() }
             val array = connection.createArrayOf(typeName, objectCollection)
             return Encode { preparedStatement, parameterIndex ->
                 preparedStatement.setArray(parameterIndex, array)

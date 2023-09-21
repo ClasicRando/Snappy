@@ -9,6 +9,10 @@ private val controlChars: Set<Char> = setOf('{', '}', '(', ')', '\\', '"')
 private const val LOCAL_TIME_PATTERN: String = "HH:mm:ss"
 /** Formatter for the [java.time.LocalTime] pattern */
 internal val localTimeFormatter = DateTimeFormatter.ofPattern(LOCAL_TIME_PATTERN)
+/** [java.time.OffsetTime] pattern for encoding date values into postgresql */
+private const val OFFSET_TIME_PATTERN: String = "HH:mm:ssx"
+/** Formatter for the [java.time.OffsetTime] pattern */
+internal val offsetTimeFormatter = DateTimeFormatter.ofPattern(OFFSET_TIME_PATTERN)
 /** [java.time.LocalDate] pattern for encoding date values into postgresql */
 private const val LOCAL_DATE_PATTERN: String = "uuuu-MM-dd"
 /** Formatter for the [java.time.LocalDate] pattern */

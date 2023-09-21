@@ -4,6 +4,7 @@ import org.snappy.postgresql.instantFormatter
 import org.snappy.postgresql.localDateFormatter
 import org.snappy.postgresql.localDateTimeFormatter
 import org.snappy.postgresql.localTimeFormatter
+import org.snappy.postgresql.offsetTimeFormatter
 import java.math.BigDecimal
 import java.sql.Date
 import java.sql.Time
@@ -12,6 +13,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.OffsetDateTime
+import java.time.OffsetTime
 
 class PgCompositeLiteralBuilder() {
     private val stringBuilder = StringBuilder().apply {
@@ -175,6 +178,10 @@ class PgCompositeLiteralBuilder() {
         return appendInstant(timestamp?.toInstant())
     }
 
+    fun appendOffsetDateTime(offsetDateTime: OffsetDateTime?): PgCompositeLiteralBuilder {
+        return appendInstant(offsetDateTime?.toInstant())
+    }
+
     fun appendInstant(instant: Instant?): PgCompositeLiteralBuilder {
         prependCommaIfNeeded()
         instant?.let {
@@ -194,6 +201,12 @@ class PgCompositeLiteralBuilder() {
     fun appendLocalTime(localTime: LocalTime?): PgCompositeLiteralBuilder {
         prependCommaIfNeeded()
         localTime?.let { stringBuilder.append(localTimeFormatter.format(it)) }
+        return this
+    }
+
+    fun appendOffsetTime(offsetTime: OffsetTime?): PgCompositeLiteralBuilder {
+        prependCommaIfNeeded()
+        offsetTime?.let { stringBuilder.append(offsetTimeFormatter.format(it)) }
         return this
     }
 
