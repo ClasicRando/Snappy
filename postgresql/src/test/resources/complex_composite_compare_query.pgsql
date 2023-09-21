@@ -39,7 +39,9 @@ with composite_data as (
      )]::complex_composite_test[]) t
 )
 select
-    t1.text_field, t1.int_field, t1.composite_field, t1.int_array_field, t1.composite_array_field,
-    t2.text_field, t2.int_field, t2.composite_field, t2.int_array_field, t2.composite_array_field
+    t1.text_field text_field_1, t1.int_field int_field_1, t1.composite_field composite_field_1,
+    t1.int_array_field int_array_field_1, t1.composite_array_field composite_array_field_1,
+    t2.text_field text_field_2, t2.int_field int_field_2, t2.composite_field composite_field_2,
+    t2.int_array_field int_array_field_2, t2.composite_array_field composite_array_field_2
 from composite_data t1
 cross join unnest(array[?]::complex_composite_test[]) t2

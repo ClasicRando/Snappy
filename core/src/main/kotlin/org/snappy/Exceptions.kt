@@ -15,8 +15,19 @@ class OutParameterOutsideProcedure
     : Throwable("Attempted to use an OUT parameter in a PreparedStatement")
 
 /** Exception thrown when extracting a value from a [SnappyRow] but the type cast fails */
-class WrongFieldType(name: String, typeName: String?)
-    : Throwable("Failed to extract field '$name'${ if (typeName != null) " as $typeName" else "" }")
+class WrongFieldType(name: String, typeName: String, value: String) : Throwable(
+    "Failed to extract field '$name'$typeName. Found value $value"
+)
+
+fun wrongFieldType(name: String, typeName: String?, value: Any?): Nothing {
+    throw WrongFieldType(
+        name,
+        if (typeName != null) " as $typeName" else "",
+        "'$value' (${value?.let { it::class.qualifiedName } ?: ""})")
+}
+
+/** Exception thrown when parsing a [SnappyRow] and the key is not found */
+class MissingField(name: String) : Throwable("Could not find field '$name' in row")
 
 /** Exception thrown when a column name in a [java.sql.ResultSet] is null */
 class NullFieldName : Throwable("Found a null column name in a ResultSet")

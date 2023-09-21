@@ -129,6 +129,15 @@ class TimeListDecoder: Decoder<List<Time>> {
     }
 }
 
+class PgObjectListDecoder: Decoder<List<PGobject>> {
+    override fun decode(value: Any): List<PGobject> {
+        if (value is java.sql.Array) {
+            return value.toList()
+        }
+        decodeError<java.sql.Array>(value)
+    }
+}
+
 class BooleanArrayDecoder: Decoder<BooleanArray> {
     override fun decode(value: Any): BooleanArray {
         if (value is java.sql.Array) {
@@ -274,8 +283,6 @@ class TimeArrayDecoder: Decoder<Array<Time>> {
     }
 }
 
-
-
 class NullableBooleanArrayDecoder: Decoder<Array<Boolean?>> {
     override fun decode(value: Any): Array<Boolean?> {
         if (value is java.sql.Array) {
@@ -390,44 +397,6 @@ class NullableTimeArrayDecoder: Decoder<Array<Time?>> {
             return value.toArrayWithNulls()
         }
         decodeError<Array<Time>>(value)
-    }
-}
-
-fun main() {
-    println(SnappyMapper.decoderCache.getOrNull<Any>())
-    DriverManager.getConnection(
-        "jdbc:postgresql://localhost/test",
-        "postgres",
-        "adminPassword1"
-    ).use { c ->
-        val obj = c.prepareStatement("select row('',1,null,array[row('',1,1)]::composite1[],'{1,2,3}'::int[],row('',1,1))::composite2 value").use { s ->
-            s.executeQuery().use { rs ->
-                rs.next()
-                rs.getObject(1)
-            }
-        }
-        println(obj)
-        (obj as? PGobject)?.let {
-            println("Type: ${it.type}")
-            println("Value: ${it.value}")
-        }
-    }
-    DriverManager.getConnection(
-        "jdbc:postgresql://localhost/test",
-        "postgres",
-        "adminPassword1"
-    ).use { c ->
-        val obj = c.prepareStatement("select array['\"','',null]::text[] value").use { s ->
-            s.executeQuery().use { rs ->
-                rs.next()
-                rs.getObject(1)
-            }
-        }
-        println(obj)
-        (obj as? PGobject)?.let {
-            println("Type: ${it.type}")
-            println("Value: ${it.value}")
-        }
     }
 }
 

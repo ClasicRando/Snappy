@@ -1,6 +1,9 @@
 package org.snappy.rowparse
 
+import org.snappy.MissingField
+import org.snappy.NullSet
 import org.snappy.WrongFieldType
+import org.snappy.wrongFieldType
 import kotlin.reflect.KClass
 import kotlin.reflect.safeCast
 
@@ -34,8 +37,35 @@ class SnappyRow(private val data: Map<String, Any?>) {
      */
     @PublishedApi
     internal fun <T : Any> getAs(key: String, returnType: KClass<T>): T? {
+        if (!containsKey(key)) {
+            throw MissingField(key)
+        }
         val value = data[key] ?: return null
-        return returnType.safeCast(value) ?: throw WrongFieldType(key, returnType.simpleName)
+        return returnType.safeCast(value) ?: wrongFieldType(key, returnType.simpleName, value)
+    }
+
+    /**
+     * Get the value associated with the [key] as [T] or null if the underlining value is null
+     *
+     * @exception WrongFieldType when the value is not of type [T]
+     */
+    inline fun <reified T : Any> getAsNotNull(key: String): T {
+        return getAsNotNull(key, T::class)
+    }
+
+    /**
+     * Get the value associated with the [key] as [T] or null if the underlining value is null
+     *
+     * @exception WrongFieldType when the value is not of type [T]
+     */
+    @PublishedApi
+    internal fun <T : Any> getAsNotNull(key: String, returnType: KClass<T>): T {
+        if (!containsKey(key)) {
+            throw MissingField(key)
+        }
+        val value = data[key]
+            ?: throw IllegalStateException("Expected field '$key' to be not null")
+        return returnType.safeCast(value) ?: wrongFieldType(key, returnType.simpleName, value)
     }
 
     /** Get the value associated with the [key] */
