@@ -4,7 +4,6 @@ plugins {
 
 val kotlinReflectVersion: String by project
 val kotlinTestVersion: String by project
-val junitVersion: String by project
 val mockkVersion: String by project
 val sqliteJdbcVersion: String by project
 val mssqlJdbcVersion: String by project
@@ -17,6 +16,5 @@ dependencies {
     testImplementation("org.xerial:sqlite-jdbc:$sqliteJdbcVersion")
     // https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc
     testImplementation("com.microsoft.sqlserver:mssql-jdbc:$mssqlJdbcVersion")
-    testImplementation("org.junit.jupiter:junit-jupiter:$junitVersion")
     testImplementation("io.mockk:mockk:$mockkVersion")
 }

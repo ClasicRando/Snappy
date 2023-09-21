@@ -25,6 +25,7 @@ subprojects {
     val logbackVersion: String by project
     val kotlinxSerializationVersion: String by project
     val classGraphVersion: String by project
+    val junitVersion: String by project
 
     dependencies {
         implementation("ch.qos.logback:logback-classic:$logbackVersion")
@@ -38,6 +39,9 @@ subprojects {
         implementation("org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:$kotlinxSerializationVersion")
         // https://mvnrepository.com/artifact/io.github.classgraph/classgraph
         implementation("io.github.classgraph:classgraph:$classGraphVersion")
+
+        testImplementation("org.junit.jupiter:junit-jupiter:$junitVersion")
+        testImplementation("org.junit.jupiter:junit-jupiter-api:$junitVersion")
     }
 
     tasks.test {
