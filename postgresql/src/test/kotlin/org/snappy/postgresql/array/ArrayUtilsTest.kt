@@ -63,6 +63,7 @@ class ArrayUtilsTest {
         every { array.array } returns arrayOf("Test")
 
         val list = assertDoesNotThrow { array.toListWithNulls<String>() }
+        assertNotNull(list)
         assertTrue(list.isNotEmpty())
         assertNotNull(list.first())
         assertEquals("Test", list[0])
@@ -74,6 +75,7 @@ class ArrayUtilsTest {
         every { array.array } returns arrayOf<String?>(null)
 
         val list = assertDoesNotThrow { array.toListWithNulls<String>() }
+        assertNotNull(list)
         assertTrue(list.isNotEmpty())
         assertNull(list.first())
     }
@@ -92,6 +94,7 @@ class ArrayUtilsTest {
         every { array.array } returns arrayOf("Test")
 
         val list = assertDoesNotThrow { array.toList<String>() }
+        assertNotNull(list)
         assertTrue(list.isNotEmpty())
         assertEquals("Test", list[0])
     }
@@ -121,6 +124,7 @@ class ArrayUtilsTest {
         every { array.array } returns arrayOf("Test")
 
         val list = assertDoesNotThrow { array.toArrayWithNulls<String>() }
+        assertNotNull(list)
         assertTrue(list.isNotEmpty())
         assertNotNull(list.first())
         assertEquals("Test", list[0])
@@ -132,6 +136,7 @@ class ArrayUtilsTest {
         every { array.array } returns arrayOf<String?>(null)
 
         val list = assertDoesNotThrow { array.toArrayWithNulls<String>() }
+        assertNotNull(list)
         assertTrue(list.isNotEmpty())
         assertNull(list.first())
     }
@@ -150,6 +155,7 @@ class ArrayUtilsTest {
         every { array.array } returns arrayOf("Test")
 
         val list = assertDoesNotThrow { array.toArray<String>() }
+        assertNotNull(list)
         assertTrue(list.isNotEmpty())
         assertEquals("Test", list[0])
     }

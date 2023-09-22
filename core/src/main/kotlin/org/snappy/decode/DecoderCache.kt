@@ -72,8 +72,7 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
      * Get a [Decoder] for the provided type [rowType]. Checks the [cache] for an existing
      * parser and returns immediately if it exists. Otherwise, it returns null
      */
-    @PublishedApi
-    internal fun getOrNull(rowType: KType): Decoder<*>? {
+    fun getOrNull(rowType: KType): Decoder<*>? {
         return cache[rowType]
     }
 
@@ -87,12 +86,12 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
 
     /** Add or replace an existing parser with a new [parser] for the [rowType] specified */
     @PublishedApi
-    internal fun <T> insertOrReplace(rowType: KType, parser: Decoder<T>) {
+    internal fun <T : Any> insertOrReplace(rowType: KType, parser: Decoder<T>) {
         cache[rowType.withNullability(false)] = parser
     }
 
     /** Add or replace an existing parser with a new [parser] for the [T] specified */
-    inline fun <reified T> insertOrReplace(parser: Decoder<T>) {
+    inline fun <reified T : Any> insertOrReplace(parser: Decoder<T>) {
         insertOrReplace(typeOf<T>(), parser)
     }
 

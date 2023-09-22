@@ -37,10 +37,14 @@ data class ComplexCompositeTestResult(
                 intField2 = row.getInt("int_field_2"),
                 compositeField1 = row.getObject<PGobject>("composite_field_1"),
                 compositeField2 = row.getObject<PGobject>("composite_field_2"),
-                intArrayField1 = row.getArray("int_array_field_1").toList(),
-                intArrayField2 = row.getArray("int_array_field_2").toList(),
-                compositeArrayField1 = row.getArray("composite_array_field_1").toList(),
-                compositeArrayField2 = row.getArray("composite_array_field_2").toList(),
+                intArrayField1 = row.getArray("int_array_field_1").toList()
+                    ?: error("Found null int_array_field_1 value"),
+                intArrayField2 = row.getArray("int_array_field_2").toList()
+                    ?: error("Found null int_array_field_2 value"),
+                compositeArrayField1 = row.getArray("composite_array_field_1").toList()
+                    ?: error("Found null composite_array_field_1 value"),
+                compositeArrayField2 = row.getArray("composite_array_field_2").toList()
+                    ?: error("Found null composite_array_field_2 value"),
             )
         }
     }

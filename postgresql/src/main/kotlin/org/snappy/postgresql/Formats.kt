@@ -18,13 +18,13 @@ private const val LOCAL_DATE_PATTERN: String = "uuuu-MM-dd"
 /** Formatter for the [java.time.LocalDate] pattern */
 internal val localDateFormatter = DateTimeFormatter.ofPattern(LOCAL_DATE_PATTERN)
 /** [java.time.Instant] pattern for encoding timestamp value into postgresql */
-private const val INSTANT_DATE_PATTERN: String = "uuuu-MM-dd HH:mm:ss.SSSSSSx"
+private const val INSTANT_DATE_PATTERN: String = "uuuu-MM-dd HH:mm:ss[.SSSSSS]x"
 /** Formatter for [java.time.Instant] pattern */
 internal val instantFormatter = DateTimeFormatter.ofPattern(INSTANT_DATE_PATTERN)
     .withZone(ZoneId.of("UTC"))
 /**
  * [java.time.LocalDateTime] pattern for encoding timestamp without timezone value into postgresql
  */
-private const val LOCAL_DATE_TIME_PATTERN: String = "uuuu-MM-dd HH:mm:ss.SSSSSS"
+private const val LOCAL_DATE_TIME_PATTERN: String = "uuuu-MM-dd HH:mm:ss[.SSSSSS]"
 /** Formatter for [java.time.LocalDateTime] pattern */
 internal val localDateTimeFormatter = DateTimeFormatter.ofPattern(LOCAL_DATE_TIME_PATTERN)

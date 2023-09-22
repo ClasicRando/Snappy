@@ -7,13 +7,12 @@ import org.snappy.decode.Decoder
 import org.snappy.decodeError
 import java.math.BigDecimal
 import java.sql.Date
-import java.sql.DriverManager
 import java.sql.Time
 import java.sql.Timestamp
 import java.time.Instant
 
 class BooleanListDecoder: Decoder<List<Boolean>> {
-    override fun decode(value: Any): List<Boolean> {
+    override fun decode(value: Any?): List<Boolean>? {
         if (value is java.sql.Array) {
             return value.toList()
         }
@@ -22,7 +21,7 @@ class BooleanListDecoder: Decoder<List<Boolean>> {
 }
 
 class ByteListDecoder: Decoder<List<Byte>> {
-    override fun decode(value: Any): List<Byte> {
+    override fun decode(value: Any?): List<Byte>? {
         if (value is java.sql.Array) {
             return value.toList()
         }
@@ -31,7 +30,7 @@ class ByteListDecoder: Decoder<List<Byte>> {
 }
 
 class ShortListDecoder: Decoder<List<Short>> {
-    override fun decode(value: Any): List<Short> {
+    override fun decode(value: Any?): List<Short>? {
         if (value is java.sql.Array) {
             return value.toList()
         }
@@ -40,7 +39,7 @@ class ShortListDecoder: Decoder<List<Short>> {
 }
 
 class IntListDecoder: Decoder<List<Int>> {
-    override fun decode(value: Any): List<Int> {
+    override fun decode(value: Any?): List<Int>? {
         if (value is java.sql.Array) {
             return value.toList()
         }
@@ -49,7 +48,7 @@ class IntListDecoder: Decoder<List<Int>> {
 }
 
 class LongListDecoder: Decoder<List<Long>> {
-    override fun decode(value: Any): List<Long> {
+    override fun decode(value: Any?): List<Long>? {
         if (value is java.sql.Array) {
             return value.toList()
         }
@@ -58,7 +57,7 @@ class LongListDecoder: Decoder<List<Long>> {
 }
 
 class FloatListDecoder: Decoder<List<Float>> {
-    override fun decode(value: Any): List<Float> {
+    override fun decode(value: Any?): List<Float>? {
         if (value is java.sql.Array) {
             return value.toList()
         }
@@ -67,7 +66,7 @@ class FloatListDecoder: Decoder<List<Float>> {
 }
 
 class DoubleListDecoder: Decoder<List<Double>> {
-    override fun decode(value: Any): List<Double> {
+    override fun decode(value: Any?): List<Double>? {
         if (value is java.sql.Array) {
             return value.toList()
         }
@@ -76,7 +75,7 @@ class DoubleListDecoder: Decoder<List<Double>> {
 }
 
 class InstantListDecoder: Decoder<List<Instant>> {
-    override fun decode(value: Any): List<Instant> {
+    override fun decode(value: Any?): List<Instant>? {
         if (value is java.sql.Array) {
             return value.toList()
         }
@@ -85,7 +84,7 @@ class InstantListDecoder: Decoder<List<Instant>> {
 }
 
 class StringListDecoder: Decoder<List<String>> {
-    override fun decode(value: Any): List<String> {
+    override fun decode(value: Any?): List<String>? {
         if (value is java.sql.Array) {
             return value.toList()
         }
@@ -94,7 +93,7 @@ class StringListDecoder: Decoder<List<String>> {
 }
 
 class BigDecimalListDecoder: Decoder<List<BigDecimal>> {
-    override fun decode(value: Any): List<BigDecimal> {
+    override fun decode(value: Any?): List<BigDecimal>? {
         if (value is java.sql.Array) {
             return value.toList()
         }
@@ -103,7 +102,7 @@ class BigDecimalListDecoder: Decoder<List<BigDecimal>> {
 }
 
 class DateListDecoder: Decoder<List<Date>> {
-    override fun decode(value: Any): List<Date> {
+    override fun decode(value: Any?): List<Date>? {
         if (value is java.sql.Array) {
             return value.toList()
         }
@@ -112,7 +111,7 @@ class DateListDecoder: Decoder<List<Date>> {
 }
 
 class TimestampListDecoder: Decoder<List<Timestamp>> {
-    override fun decode(value: Any): List<Timestamp> {
+    override fun decode(value: Any?): List<Timestamp>? {
         if (value is java.sql.Array) {
             return value.toList()
         }
@@ -121,7 +120,7 @@ class TimestampListDecoder: Decoder<List<Timestamp>> {
 }
 
 class TimeListDecoder: Decoder<List<Time>> {
-    override fun decode(value: Any): List<Time> {
+    override fun decode(value: Any?): List<Time>? {
         if (value is java.sql.Array) {
             return value.toList()
         }
@@ -130,7 +129,7 @@ class TimeListDecoder: Decoder<List<Time>> {
 }
 
 class PgObjectListDecoder: Decoder<List<PGobject>> {
-    override fun decode(value: Any): List<PGobject> {
+    override fun decode(value: Any?): List<PGobject>? {
         if (value is java.sql.Array) {
             return value.toList()
         }
@@ -139,8 +138,11 @@ class PgObjectListDecoder: Decoder<List<PGobject>> {
 }
 
 class BooleanArrayDecoder: Decoder<BooleanArray> {
-    override fun decode(value: Any): BooleanArray {
+    override fun decode(value: Any?): BooleanArray? {
         if (value is java.sql.Array) {
+            if (value.array == null) {
+                return null
+            }
             val array = value.array as Array<*>
             return BooleanArray(array.size) { i ->
                 val primitiveValue = array[i] ?: decodeError<Boolean>(array[i])
@@ -152,8 +154,11 @@ class BooleanArrayDecoder: Decoder<BooleanArray> {
 }
 
 class ByteArrayDecoder: Decoder<ByteArray> {
-    override fun decode(value: Any): ByteArray {
+    override fun decode(value: Any?): ByteArray? {
         if (value is java.sql.Array) {
+            if (value.array == null) {
+                return null
+            }
             val array = value.array as Array<*>
             return ByteArray(array.size) { i ->
                 val primitiveValue = array[i] ?: decodeError<Byte>(array[i])
@@ -165,8 +170,11 @@ class ByteArrayDecoder: Decoder<ByteArray> {
 }
 
 class ShortArrayDecoder: Decoder<ShortArray> {
-    override fun decode(value: Any): ShortArray {
+    override fun decode(value: Any?): ShortArray? {
         if (value is java.sql.Array) {
+            if (value.array == null) {
+                return null
+            }
             val array = value.array as Array<*>
             return ShortArray(array.size) { i ->
                 val primitiveValue = array[i] ?: decodeError<Short>(array[i])
@@ -178,8 +186,11 @@ class ShortArrayDecoder: Decoder<ShortArray> {
 }
 
 class IntArrayDecoder: Decoder<IntArray> {
-    override fun decode(value: Any): IntArray {
+    override fun decode(value: Any?): IntArray? {
         if (value is java.sql.Array) {
+            if (value.array == null) {
+                return null
+            }
             val array = value.array as Array<*>
             return IntArray(array.size) { i ->
                 val primitiveValue = array[i] ?: decodeError<Int>(array[i])
@@ -191,8 +202,11 @@ class IntArrayDecoder: Decoder<IntArray> {
 }
 
 class LongArrayDecoder: Decoder<LongArray> {
-    override fun decode(value: Any): LongArray {
+    override fun decode(value: Any?): LongArray? {
         if (value is java.sql.Array) {
+            if (value.array == null) {
+                return null
+            }
             val array = value.array as Array<*>
             return LongArray(array.size) { i ->
                 val primitiveValue = array[i] ?: decodeError<Long>(array[i])
@@ -204,8 +218,11 @@ class LongArrayDecoder: Decoder<LongArray> {
 }
 
 class FloatArrayDecoder: Decoder<FloatArray> {
-    override fun decode(value: Any): FloatArray {
+    override fun decode(value: Any?): FloatArray? {
         if (value is java.sql.Array) {
+            if (value.array == null) {
+                return null
+            }
             val array = value.array as Array<*>
             return FloatArray(array.size) { i ->
                 val primitiveValue = array[i] ?: decodeError<Float>(array[i])
@@ -217,8 +234,11 @@ class FloatArrayDecoder: Decoder<FloatArray> {
 }
 
 class DoubleArrayDecoder: Decoder<DoubleArray> {
-    override fun decode(value: Any): DoubleArray {
+    override fun decode(value: Any?): DoubleArray? {
         if (value is java.sql.Array) {
+            if (value.array == null) {
+                return null
+            }
             val array = value.array as Array<*>
             return DoubleArray(array.size) { i ->
                 val primitiveValue = array[i] ?: decodeError<Double>(array[i])
@@ -230,7 +250,7 @@ class DoubleArrayDecoder: Decoder<DoubleArray> {
 }
 
 class InstantArrayDecoder: Decoder<Array<Instant>> {
-    override fun decode(value: Any): Array<Instant> {
+    override fun decode(value: Any?): Array<Instant>? {
         if (value is java.sql.Array) {
             return value.toArray()
         }
@@ -239,7 +259,7 @@ class InstantArrayDecoder: Decoder<Array<Instant>> {
 }
 
 class StringArrayDecoder: Decoder<Array<String>> {
-    override fun decode(value: Any): Array<String> {
+    override fun decode(value: Any?): Array<String>? {
         if (value is java.sql.Array) {
             return value.toArray()
         }
@@ -248,7 +268,7 @@ class StringArrayDecoder: Decoder<Array<String>> {
 }
 
 class BigDecimalArrayDecoder: Decoder<Array<BigDecimal>> {
-    override fun decode(value: Any): Array<BigDecimal> {
+    override fun decode(value: Any?): Array<BigDecimal>? {
         if (value is java.sql.Array) {
             return value.toArray()
         }
@@ -257,7 +277,7 @@ class BigDecimalArrayDecoder: Decoder<Array<BigDecimal>> {
 }
 
 class DateArrayDecoder: Decoder<Array<Date>> {
-    override fun decode(value: Any): Array<Date> {
+    override fun decode(value: Any?): Array<Date>? {
         if (value is java.sql.Array) {
             return value.toArray()
         }
@@ -266,7 +286,7 @@ class DateArrayDecoder: Decoder<Array<Date>> {
 }
 
 class TimestampArrayDecoder: Decoder<Array<Timestamp>> {
-    override fun decode(value: Any): Array<Timestamp> {
+    override fun decode(value: Any?): Array<Timestamp>? {
         if (value is java.sql.Array) {
             return value.toArray()
         }
@@ -275,7 +295,7 @@ class TimestampArrayDecoder: Decoder<Array<Timestamp>> {
 }
 
 class TimeArrayDecoder: Decoder<Array<Time>> {
-    override fun decode(value: Any): Array<Time> {
+    override fun decode(value: Any?): Array<Time>? {
         if (value is java.sql.Array) {
             return value.toArray()
         }
@@ -284,7 +304,7 @@ class TimeArrayDecoder: Decoder<Array<Time>> {
 }
 
 class NullableBooleanArrayDecoder: Decoder<Array<Boolean?>> {
-    override fun decode(value: Any): Array<Boolean?> {
+    override fun decode(value: Any?): Array<Boolean?>? {
         if (value is java.sql.Array) {
             return value.toArrayWithNulls()
         }
@@ -293,7 +313,7 @@ class NullableBooleanArrayDecoder: Decoder<Array<Boolean?>> {
 }
 
 class NullableByteArrayDecoder: Decoder<Array<Byte?>> {
-    override fun decode(value: Any): Array<Byte?> {
+    override fun decode(value: Any?): Array<Byte?>? {
         if (value is java.sql.Array) {
             return value.toArrayWithNulls()
         }
@@ -302,7 +322,7 @@ class NullableByteArrayDecoder: Decoder<Array<Byte?>> {
 }
 
 class NullableShortArrayDecoder: Decoder<Array<Short?>> {
-    override fun decode(value: Any): Array<Short?> {
+    override fun decode(value: Any?): Array<Short?>? {
         if (value is java.sql.Array) {
             return value.toArrayWithNulls()
         }
@@ -311,7 +331,7 @@ class NullableShortArrayDecoder: Decoder<Array<Short?>> {
 }
 
 class NullableIntArrayDecoder: Decoder<Array<Int?>> {
-    override fun decode(value: Any): Array<Int?> {
+    override fun decode(value: Any?): Array<Int?>? {
         if (value is java.sql.Array) {
             return value.toArrayWithNulls()
         }
@@ -320,7 +340,7 @@ class NullableIntArrayDecoder: Decoder<Array<Int?>> {
 }
 
 class NullableLongArrayDecoder: Decoder<Array<Long?>> {
-    override fun decode(value: Any): Array<Long?> {
+    override fun decode(value: Any?): Array<Long?>? {
         if (value is java.sql.Array) {
             return value.toArrayWithNulls()
         }
@@ -329,7 +349,7 @@ class NullableLongArrayDecoder: Decoder<Array<Long?>> {
 }
 
 class NullableFloatArrayDecoder: Decoder<Array<Float?>> {
-    override fun decode(value: Any): Array<Float?> {
+    override fun decode(value: Any?): Array<Float?>? {
         if (value is java.sql.Array) {
             return value.toArrayWithNulls()
         }
@@ -338,7 +358,7 @@ class NullableFloatArrayDecoder: Decoder<Array<Float?>> {
 }
 
 class NullableDoubleArrayDecoder: Decoder<Array<Double?>> {
-    override fun decode(value: Any): Array<Double?> {
+    override fun decode(value: Any?): Array<Double?>? {
         if (value is java.sql.Array) {
             return value.toArrayWithNulls()
         }
@@ -347,7 +367,7 @@ class NullableDoubleArrayDecoder: Decoder<Array<Double?>> {
 }
 
 class NullableInstantArrayDecoder: Decoder<Array<Instant?>> {
-    override fun decode(value: Any): Array<Instant?> {
+    override fun decode(value: Any?): Array<Instant?>? {
         if (value is java.sql.Array) {
             return value.toArrayWithNulls()
         }
@@ -356,7 +376,7 @@ class NullableInstantArrayDecoder: Decoder<Array<Instant?>> {
 }
 
 class NullableStringArrayDecoder: Decoder<Array<String?>> {
-    override fun decode(value: Any): Array<String?> {
+    override fun decode(value: Any?): Array<String?>? {
         if (value is java.sql.Array) {
             return value.toArrayWithNulls()
         }
@@ -365,7 +385,7 @@ class NullableStringArrayDecoder: Decoder<Array<String?>> {
 }
 
 class NullableBigDecimalArrayDecoder: Decoder<Array<BigDecimal?>> {
-    override fun decode(value: Any): Array<BigDecimal?> {
+    override fun decode(value: Any?): Array<BigDecimal?>? {
         if (value is java.sql.Array) {
             return value.toArrayWithNulls()
         }
@@ -374,7 +394,7 @@ class NullableBigDecimalArrayDecoder: Decoder<Array<BigDecimal?>> {
 }
 
 class NullableDateArrayDecoder: Decoder<Array<Date?>> {
-    override fun decode(value: Any): Array<Date?> {
+    override fun decode(value: Any?): Array<Date?>? {
         if (value is java.sql.Array) {
             return value.toArrayWithNulls()
         }
@@ -383,7 +403,7 @@ class NullableDateArrayDecoder: Decoder<Array<Date?>> {
 }
 
 class NullableTimestampArrayDecoder: Decoder<Array<Timestamp?>> {
-    override fun decode(value: Any): Array<Timestamp?> {
+    override fun decode(value: Any?): Array<Timestamp?>? {
         if (value is java.sql.Array) {
             return value.toArrayWithNulls()
         }
@@ -392,7 +412,7 @@ class NullableTimestampArrayDecoder: Decoder<Array<Timestamp?>> {
 }
 
 class NullableTimeArrayDecoder: Decoder<Array<Time?>> {
-    override fun decode(value: Any): Array<Time?> {
+    override fun decode(value: Any?): Array<Time?>? {
         if (value is java.sql.Array) {
             return value.toArrayWithNulls()
         }
@@ -401,15 +421,18 @@ class NullableTimeArrayDecoder: Decoder<Array<Time?>> {
 }
 
 @Suppress("UNCHECKED_CAST")
-inline fun <reified T : Any> java.sql.Array.toArray(): Array<T> {
-    val result = toArrayWithNulls<T>()
+inline fun <reified T : Any> java.sql.Array.toArray(): Array<T>? {
+    val result = toArrayWithNulls<T>() ?: return null
     if (result.any { it == null }) {
         throw IllegalStateException("SQL array must not contain nulls")
     }
     return result as Array<T>
 }
 
-inline fun <reified T : Any> java.sql.Array.toArrayWithNulls(): Array<T?> {
+inline fun <reified T : Any> java.sql.Array.toArrayWithNulls(): Array<T?>? {
+    if (this.array == null) {
+        return null
+    }
     val array = this.array as Array<*>
     val decoder = SnappyMapper.decoderCache.getOrDefault<T>()
     return Array(array.size) { i ->
@@ -419,15 +442,18 @@ inline fun <reified T : Any> java.sql.Array.toArrayWithNulls(): Array<T?> {
 }
 
 @Suppress("UNCHECKED_CAST")
-inline fun <reified T : Any> java.sql.Array.toList(): List<T> {
-    val result = toListWithNulls<T>()
+inline fun <reified T : Any> java.sql.Array.toList(): List<T>? {
+    val result = toListWithNulls<T>() ?: return null
     if (result.any { it == null }) {
         throw IllegalStateException("SQL array must not contain nulls")
     }
     return result as List<T>
 }
 
-inline fun <reified T : Any> java.sql.Array.toListWithNulls(): List<T?> {
+inline fun <reified T : Any> java.sql.Array.toListWithNulls(): List<T?>? {
+    if (this.array == null) {
+        return null
+    }
     val array = this.array as Array<*>
     val decoder = SnappyMapper.decoderCache.getOrDefault<T>()
     return array.map {

@@ -14,6 +14,7 @@ import org.snappy.decodeError
 import kotlin.reflect.KClass
 
 class PgIntervalDecoder : PgObjectDecoder<PGInterval> {
+    override val typeName: String = "interval"
     override val decodeClass: KClass<PGInterval> = PGInterval::class
 
     override fun decodePgObject(pgObject: PGobject): PGInterval {
@@ -25,6 +26,7 @@ class PgIntervalDecoder : PgObjectDecoder<PGInterval> {
 }
 
 class PgBoxDecoder : PgObjectDecoder<PGbox> {
+    override val typeName: String = "interval"
     override val decodeClass: KClass<PGbox> = PGbox::class
 
     override fun decodePgObject(pgObject: PGobject): PGbox {
@@ -36,6 +38,7 @@ class PgBoxDecoder : PgObjectDecoder<PGbox> {
 }
 
 class PgCircleDecoder : PgObjectDecoder<PGcircle> {
+    override val typeName: String = "interval"
     override val decodeClass: KClass<PGcircle> = PGcircle::class
 
     override fun decodePgObject(pgObject: PGobject): PGcircle {
@@ -47,6 +50,7 @@ class PgCircleDecoder : PgObjectDecoder<PGcircle> {
 }
 
 class PgLineDecoder : PgObjectDecoder<PGline> {
+    override val typeName: String = "interval"
     override val decodeClass: KClass<PGline> = PGline::class
 
     override fun decodePgObject(pgObject: PGobject): PGline {
@@ -58,6 +62,7 @@ class PgLineDecoder : PgObjectDecoder<PGline> {
 }
 
 class PgLineSegmentDecoder : PgObjectDecoder<PGlseg> {
+    override val typeName: String = "interval"
     override val decodeClass: KClass<PGlseg> = PGlseg::class
 
     override fun decodePgObject(pgObject: PGobject): PGlseg {
@@ -69,6 +74,7 @@ class PgLineSegmentDecoder : PgObjectDecoder<PGlseg> {
 }
 
 class PgPathDecoder : PgObjectDecoder<PGpath> {
+    override val typeName: String = "interval"
     override val decodeClass: KClass<PGpath> = PGpath::class
 
     override fun decodePgObject(pgObject: PGobject): PGpath {
@@ -80,6 +86,7 @@ class PgPathDecoder : PgObjectDecoder<PGpath> {
 }
 
 class PgPointDecoder : PgObjectDecoder<PGpoint> {
+    override val typeName: String = "interval"
     override val decodeClass: KClass<PGpoint> = PGpoint::class
 
     override fun decodePgObject(pgObject: PGobject): PGpoint {
@@ -91,6 +98,7 @@ class PgPointDecoder : PgObjectDecoder<PGpoint> {
 }
 
 class PgPolygonDecoder : PgObjectDecoder<PGpolygon> {
+    override val typeName: String = "interval"
     override val decodeClass: KClass<PGpolygon> = PGpolygon::class
 
     override fun decodePgObject(pgObject: PGobject): PGpolygon {
@@ -102,6 +110,7 @@ class PgPolygonDecoder : PgObjectDecoder<PGpolygon> {
 }
 
 class PgMoneyDecoder : PgObjectDecoder<PGmoney> {
+    override val typeName: String = "interval"
     override val decodeClass: KClass<PGmoney> = PGmoney::class
 
     override fun decodePgObject(pgObject: PGobject): PGmoney {
