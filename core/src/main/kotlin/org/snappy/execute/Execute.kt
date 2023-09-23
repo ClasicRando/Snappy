@@ -24,7 +24,7 @@ import java.sql.Connection
  */
 fun Connection.execute(
     sql: String,
-    parameters: List<Any> = emptyList(),
+    parameters: List<Any?> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
 ): Int {
@@ -54,7 +54,7 @@ fun Connection.execute(
  */
 suspend fun Connection.executeSuspend(
     sql: String,
-    parameters: List<Any> = emptyList(),
+    parameters: List<Any?> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
 ): Int = withContext(Dispatchers.IO) {
@@ -79,7 +79,7 @@ suspend fun Connection.executeSuspend(
  */
 fun Connection.executeLarge(
     sql: String,
-    parameters: List<Any> = emptyList(),
+    parameters: List<Any?> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
 ): Long {
@@ -110,7 +110,7 @@ fun Connection.executeLarge(
  */
 suspend fun Connection.executeLargeSuspend(
     sql: String,
-    parameters: List<Any> = emptyList(),
+    parameters: List<Any?> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
 ): Long = withContext(Dispatchers.IO) {
@@ -132,7 +132,7 @@ suspend fun Connection.executeLargeSuspend(
  */
 fun Connection.executeOutParameters(
     procedureName: String,
-    parameters: List<Any>,
+    parameters: List<Any?>,
     timeout: UInt? = null,
 ): List<Any?> {
     check(!isClosed) { "Cannot query a closed connection" }
@@ -171,7 +171,7 @@ fun Connection.executeOutParameters(
  */
 suspend fun Connection.executeOutParametersSuspend(
     procedureName: String,
-    parameters: List<Any>,
+    parameters: List<Any?>,
     timeout: UInt? = null,
 ): List<Any?> = withContext(Dispatchers.IO) {
     executeOutParameters(procedureName, parameters, timeout)

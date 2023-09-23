@@ -12,7 +12,7 @@ where
     C : Connection
 {
     validateChannelName(channelName)
-    this.execute("NOTIFY $channelName, '${message?.replace("'", "''")}'")
+    this.execute("SELECT pg_notify(?, ?)", listOf(channelName, message))
 }
 
 suspend fun <C> C.notifySuspend(channelName: String, message: String? = null)
@@ -21,5 +21,5 @@ where
     C : Connection
 {
     validateChannelName(channelName)
-    this.executeSuspend("NOTIFY $channelName, '${message?.replace("'", "''")}'")
+    this.executeSuspend("SELECT pg_notify(?, ?)", listOf(channelName, message))
 }
