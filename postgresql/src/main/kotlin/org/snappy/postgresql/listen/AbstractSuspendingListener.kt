@@ -65,11 +65,13 @@ abstract class AbstractSuspendingListener<C>(
                 require(!connection.isClosed) { "Cannot listen to a closed connection" }
                 connection.notifications?.let { pgNotifications ->
                     for (notification in pgNotifications) {
-                        log.info {
-                            val name = notification.name
-                            val pid = notification.pid
-                            val parameter = notification.parameter
-                            "Received a notification, PGNotification(Name=$name,PID=$pid,Parameter=$parameter)"
+                        log.atInfo {
+                            message = "Received a notification"
+                            payload = mapOf(
+                                "Name" to notification.name,
+                                "PID" to notification.pid,
+                                "Parameter" to notification.parameter,
+                            )
                         }
                         processNotification(notification)
                     }
