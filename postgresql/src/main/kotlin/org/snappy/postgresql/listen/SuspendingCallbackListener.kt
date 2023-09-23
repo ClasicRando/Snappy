@@ -1,77 +1,56 @@
 package org.snappy.postgresql.listen
 
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.channels.Channel
 import org.postgresql.PGConnection
 import org.postgresql.PGNotification
 import org.snappy.logging.logger
 import java.sql.Connection
-import java.sql.SQLException
 
-fun <C> CoroutineScope.callbackListener(
+/** Create a new [SuspendingCallbackListener] attached to the receiver [CoroutineScope] */
+fun <C> CoroutineScope.pgCallbackListener(
     connection: C,
     listenChannel: String,
+    checkNotificationsDelay: UInt = 100u,
     callback: suspend (PGNotification) -> Unit,
 ): SuspendingCallbackListener<C>
 where
     C : PGConnection,
     C : Connection
 {
-    return SuspendingCallbackListener(connection, listenChannel, this, callback)
+    return SuspendingCallbackListener(
+        connection,
+        listenChannel,
+        checkNotificationsDelay,
+        this,
+        callback,
+    )
 }
 
+/**
+ * Listener on a postgres database [connection] looking for asynchronous messages on the
+ * [listenChannel] specified. This object should take ownership of the [connection] meaning no other
+ * threads or objects hold reference to the [connection]. Upon creation of an object instance, a new
+ * [Job][kotlinx.coroutines.Job] is launched to poll the connection for new messages that may have
+ * been sent. Note: The coroutine is launched within the context of [Dispatchers.IO] since polling
+ * is a blocking operation. When new notifications have been received through the connection, the
+ * [callback] method is invoked to handle the notification. When you are done using the object you
+ * must [close] the listener to stop the [job] and close the [connection].
+ */
 class SuspendingCallbackListener<C>(
-    private val connection: C,
-    private val listenChannel: String,
+    connection: C,
+    listenChannel: String,
+    checkNotificationsDelay: UInt,
     scope: CoroutineScope,
     private val callback: suspend (PGNotification) -> Unit,
-) where
+) : AbstractSuspendingListener<C>(connection, listenChannel, checkNotificationsDelay, scope) where
     C : PGConnection,
     C : Connection
 {
-    private val log by logger()
-    init {
-        require(!connection.isClosed) { "Cannot listen to a closed connection" }
-        validateChannelName(listenChannel)
-    }
-    private val job = scope.launch(context = Dispatchers.IO) {
-        require(!connection.isClosed) { "Cannot listen to a closed connection" }
-        connection.use { c ->
-            c.createStatement().use {
-                it.execute("LISTEN $listenChannel")
-            }
-            while (isActive) {
-                try {
-                    require(!c.isClosed) { "Cannot listen to a closed connection" }
-                    c.notifications?.let { pgNotifications ->
-                        for (notification in pgNotifications) {
-                            callback(notification)
-                        }
-                    }
-                    delay(500)
-                } catch (cancel: CancellationException) {
-                    log.info { "Exiting listener due to CancellationException" }
-                    break
-                } catch (sqlException: SQLException) {
-                    log.error(sqlException) {
-                        "Encountered SQL error listening to Postgres connection"
-                    }
-                    break
-                } catch (ex: Throwable) {
-                    log.error(ex) {
-                        "Encountered unknown error listening to Postgres connection"
-                    }
-                    break
-                }
-            }
-        }
-    }
+    override val log by logger()
 
-    fun stop() {
-        job.cancel()
+    override suspend fun processNotification(notification: PGNotification) {
+        callback(notification)
     }
 }

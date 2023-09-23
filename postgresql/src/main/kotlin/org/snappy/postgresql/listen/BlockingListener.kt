@@ -38,12 +38,6 @@ class BlockingListener<C>(
     private val blockingQueue: BlockingQueue<PGNotification> = ArrayBlockingQueue(buffer.toInt())
 
     override fun processNotification(notification: PGNotification) {
-        log.info {
-            val name = notification.name
-            val pid = notification.pid
-            val parameter = notification.parameter
-            "Received a notification, PGNotification(Name=$name,PID=$pid,Parameter=$parameter)"
-        }
         blockingQueue.put(notification)
     }
 

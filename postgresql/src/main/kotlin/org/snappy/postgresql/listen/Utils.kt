@@ -21,12 +21,36 @@ where
 }
 
 fun <C> C.unlisten(channelName: String)
-        where
-        C : PGConnection,
-        C : Connection
+where
+    C : PGConnection,
+    C : Connection
 {
     validateChannelName(channelName)
     createStatement().use {
         it.execute("UNLISTEN $channelName")
+    }
+}
+
+suspend inline fun <C, L, R> L.use(crossinline block: suspend (L) -> R): R
+where
+    C : PGConnection,
+    C : Connection,
+    L : AbstractSuspendingListener<C>
+{
+    var exception: Throwable? = null
+    try {
+        return block(this)
+    } catch (e: Throwable) {
+        exception = e
+        throw e
+    } finally {
+        when {
+            exception == null -> close()
+            else -> try {
+                close()
+            } catch (closeException: Throwable) {
+                exception.addSuppressed(closeException)
+            }
+        }
     }
 }
