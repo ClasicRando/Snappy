@@ -10,6 +10,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.OffsetDateTime
+import java.time.OffsetTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
@@ -29,6 +31,7 @@ internal fun recordToCsvBytes(record: Iterable<String>): ByteArray {
  * possible [header] line. There is also an option for non-qualified files where the QUOTE and
  * ESCAPE options are not set.
  */
+@PublishedApi
 internal fun getCopyCommand(
     tableName: String,
     header: Boolean,
@@ -53,6 +56,7 @@ internal fun getCopyCommand(
  * values are set to [ZoneOffset.UTC] before formatting so the values copied to the table will be of
  * the same zone.
  */
+@PublishedApi
 internal fun formatObject(value: Any?): String {
     return when(value) {
         null -> ""
@@ -60,21 +64,25 @@ internal fun formatObject(value: Any?): String {
         is String -> value
         is BigDecimal -> value.toPlainString()
         is ByteArray -> value.decodeToString()
-        is Timestamp -> value.toInstant().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_DATE_TIME)
         is Instant -> value.atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_DATE_TIME)
+        is OffsetDateTime -> value.format(DateTimeFormatter.ISO_DATE_TIME)
+        is OffsetTime -> value.format(DateTimeFormatter.ISO_TIME)
         is LocalDateTime -> value.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
         is LocalDate -> value.format(DateTimeFormatter.ISO_LOCAL_DATE)
         is LocalTime -> value.format(DateTimeFormatter.ISO_LOCAL_TIME)
-        is Date -> value.toInstant().atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_DATE_TIME)
-        is Time -> value.toLocalTime().format(DateTimeFormatter.ISO_LOCAL_TIME)
         else -> value.toString()
     }
 }
 
+/** Copy an [inputStream] through the connection using the [copyCommand] specified */
 fun PGConnection.copyIn(copyCommand: String, inputStream: InputStream): Long {
     return copyAPI.copyIn(copyCommand, inputStream)
 }
 
+/**
+ * Copy an [inputStream] through the connection, constructing a COPY command using the parameters
+ * provided
+ */
 fun PGConnection.copyIn(
     inputStream: InputStream,
     tableName: String,
@@ -87,6 +95,17 @@ fun PGConnection.copyIn(
     return copyIn(copyCommand, inputStream)
 }
 
+/**
+ * Base logic when attempting to perform a COPY with a [Sequence] of CSV [records]. Fetches a
+ * [org.postgresql.copy.CopyIn] client, iterating over the [records] and converting each record into
+ * a [ByteArray] for writing to the [org.postgresql.copy.CopyIn] client. After all records have been
+ * passed to the server, [org.postgresql.copy.CopyIn.endCopy] is called to get the number of records
+ * wrote to the server.
+ *
+ * If an exception is thrown during the copy operation, [org.postgresql.copy.CopyIn.cancelCopy] is
+ * called to abort the operation and no records are saved.
+ */
+@PublishedApi
 internal fun PGConnection.copyInInternal(
     copyCommand: String,
     records: Sequence<Iterable<String>>,
@@ -104,11 +123,16 @@ internal fun PGConnection.copyInInternal(
     }
 }
 
-fun <T : IntoCsvRow> PGConnection.copyInCsv(copyCommand: String, records: Sequence<T>): Long {
-    return copyInInternal(copyCommand, records.map { it.intoCsvRow() })
+/** Execute the [copyCommand] provided, writing the [records] to the server */
+fun <T : ToCsvRow> PGConnection.copyInCsv(copyCommand: String, records: Sequence<T>): Long {
+    return copyInInternal(copyCommand, records.map { it.toCsvRow() })
 }
 
-fun <T : IntoCsvRow> PGConnection.copyInCsv(
+/**
+ * Execute a COPY command, writing the [records] to the server. The other parameters specified are
+ * used to construct the COPY command
+ */
+fun <T : ToCsvRow> PGConnection.copyInCsv(
     records: Sequence<T>,
     tableName: String,
     header: Boolean,
@@ -120,33 +144,43 @@ fun <T : IntoCsvRow> PGConnection.copyInCsv(
     return copyInCsv(copyCommand, records)
 }
 
-fun <T : IntoCsvRow> PGConnection.copyInCsv(
+/** Execute the [copyCommand] provided, writing the data yielded from [records] to the server */
+inline fun <T : ToCsvRow> PGConnection.copyInCsv(
     copyCommand: String,
-    records: suspend SequenceScope<T>.() -> Unit,
+    crossinline records: suspend SequenceScope<T>.() -> Unit,
 ): Long {
-    return copyInInternal(copyCommand, sequence { records() }.map { it.intoCsvRow() })
+    return copyInCsv(copyCommand, sequence { records() })
 }
 
-fun <T : IntoCsvRow> PGConnection.copyInCsv(
+/**
+ * Execute a COPY command, writing data yielded from [records] to the server. The other parameters
+ * specified are used to construct the COPY command
+ */
+inline fun <T : ToCsvRow> PGConnection.copyInCsv(
     tableName: String,
     header: Boolean,
     columNames: List<String>,
     delimiter: Char = ',',
     qualified: Boolean = true,
-    records: suspend SequenceScope<T>.() -> Unit,
+    crossinline records: suspend SequenceScope<T>.() -> Unit,
 ): Long {
     val copyCommand = getCopyCommand(tableName, header, columNames, delimiter, qualified)
     return copyInCsv(copyCommand, records)
 }
 
-fun <T : IntoObjectRow> PGConnection.copyInRow(copyCommand: String, records: Sequence<T>): Long {
+/** Execute the [copyCommand] provided, writing the [records] to the server */
+fun <T : ToObjectRow> PGConnection.copyInRow(copyCommand: String, records: Sequence<T>): Long {
     return copyInInternal(
         copyCommand,
-        records.map { record -> record.intoObjectRow().map { obj -> formatObject(obj) } },
+        records.map { record -> record.toObjectRow().map { obj -> formatObject(obj) } },
     )
 }
 
-fun <T : IntoObjectRow> PGConnection.copyInRow(
+/**
+ * Execute a COPY command, writing the [records] to the server. The other parameters specified are
+ * used to construct the COPY command
+ */
+fun <T : ToObjectRow> PGConnection.copyInRow(
     records: Sequence<T>,
     tableName: String,
     header: Boolean,
@@ -158,27 +192,25 @@ fun <T : IntoObjectRow> PGConnection.copyInRow(
     return copyInRow(copyCommand, records)
 }
 
-fun <T : IntoObjectRow> PGConnection.copyInRow(
+/** Execute the [copyCommand] provided, writing the data yielded from [records] to the server */
+inline fun <T : ToObjectRow> PGConnection.copyInRow(
     copyCommand: String,
-    records: suspend SequenceScope<T>.() -> Unit,
+    crossinline records: suspend SequenceScope<T>.() -> Unit,
 ): Long {
-    return copyInInternal(
-        copyCommand,
-        sequence {
-            records()
-        }.map { record ->
-            record.intoObjectRow().map { obj -> formatObject(obj) }
-        },
-    )
+    return copyInRow(copyCommand, sequence { records() })
 }
 
-fun <T : IntoObjectRow> PGConnection.copyInRow(
+/**
+ * Execute a COPY command, writing data yielded from [records] to the server. The other parameters
+ * specified are used to construct the COPY command
+ */
+inline fun <T : ToObjectRow> PGConnection.copyInRow(
     tableName: String,
     header: Boolean,
     columNames: List<String>,
     delimiter: Char = ',',
     qualified: Boolean = true,
-    records: suspend SequenceScope<T>.() -> Unit
+    crossinline records: suspend SequenceScope<T>.() -> Unit
 ): Long {
     val copyCommand = getCopyCommand(tableName, header, columNames, delimiter, qualified)
     return copyInRow(copyCommand, records)
