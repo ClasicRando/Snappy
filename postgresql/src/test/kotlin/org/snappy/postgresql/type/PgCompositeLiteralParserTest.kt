@@ -49,38 +49,7 @@ class PgCompositeLiteralParserTest {
                 c.queryScalar<PGobject>(compositeCompareQuery)
             }
             assertDoesNotThrow {
-                parseComposite(result) {
-                    val boolField = readBoolean() ?: error("bool field cannot be null")
-                    val smallintField = readShort() ?: error("short field cannot be null")
-                    val intField = readInt() ?: error("int field cannot be null")
-                    val bigintField = readLong() ?: error("long field cannot be null")
-                    val realField = readFloat() ?: error("float field cannot be null")
-                    val doubleField = readDouble() ?: error("double field cannot be null")
-                    val textField = readString() ?: error("string field cannot be null")
-                    val numericField = readBigDecimal() ?: error("numeric field cannot be null")
-                    val dateField = readLocalDate() ?: error("local date field cannot be null")
-                    val timestampField = readLocalDateTime()
-                        ?: error("local date time field cannot be null")
-                    val timestampTzField = readOffsetDateTime()
-                        ?: error("offset date time field cannot be null")
-                    val timeField = readLocalTime() ?: error("local time field cannot be null")
-                    val timeTzField = readOffsetTime() ?: error("offset time field cannot be null")
-                    SimpleCompositeTest(
-                        boolField,
-                        smallintField,
-                        intField,
-                        bigintField,
-                        realField,
-                        doubleField,
-                        textField,
-                        numericField,
-                        dateField,
-                        timestampField,
-                        timestampTzField,
-                        timeField,
-                        timeTzField,
-                    )
-                }
+                SimpleCompositeTest.decodePgObject(result)
             }
         }
     }
