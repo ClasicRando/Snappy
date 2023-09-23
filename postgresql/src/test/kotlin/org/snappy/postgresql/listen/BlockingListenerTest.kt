@@ -30,21 +30,21 @@ class BlockingListenerTest {
 
     @Test
     fun `queue should populate provide notifications when 3 notifications sent`() {
-        val channelName = "test_channel"
-        val listener = BlockingListener(getConnection(), channelName)
-        useConnection { c ->
-            listener.start()
-            c.notify(channelName)
-            Thread.sleep(500)
-            c.notify(channelName)
-            Thread.sleep(500)
-            c.notify(channelName)
-            Thread.sleep(5000)
-            listener.stop()
+        val channelName = "blocking_test_channel"
+        val result = BlockingListener(getConnection(), channelName).use {
+            useConnection { c ->
+                Thread.sleep(500)
+                c.notify(channelName)
+                Thread.sleep(500)
+                c.notify(channelName)
+                Thread.sleep(500)
+                c.notify(channelName)
+                Thread.sleep(5000)
+            }
+            generateSequence {
+                it.receive(1u, TimeUnit.SECONDS)
+            }.toList()
         }
-        val result = generateSequence {
-            listener.receive(1u, TimeUnit.SECONDS)
-        }.toList()
         assertEquals(3, result.size)
     }
 }

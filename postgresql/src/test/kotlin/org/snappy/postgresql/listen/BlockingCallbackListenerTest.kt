@@ -29,20 +29,20 @@ class BlockingCallbackListenerTest {
 
     @Test
     fun `callback should populate list when 3 notifications sent`() {
-        val channelName = "test_channel"
+        val channelName = "blocking_callback_test_channel"
         val result = mutableListOf<PGNotification>()
-        val listener = BlockingCallbackListener(getConnection(), channelName) {
+        BlockingCallbackListener(getConnection(), channelName) {
             result += it
-        }
-        useConnection { c ->
-            listener.start()
-            c.notify(channelName)
-            Thread.sleep(500)
-            c.notify(channelName)
-            Thread.sleep(500)
-            c.notify(channelName)
-            Thread.sleep(5000)
-            listener.stop()
+        }.use {
+            useConnection { c ->
+                Thread.sleep(500)
+                c.notify(channelName)
+                Thread.sleep(500)
+                c.notify(channelName)
+                Thread.sleep(500)
+                c.notify(channelName)
+                Thread.sleep(5000)
+            }
         }
         assertEquals(3, result.size)
     }
