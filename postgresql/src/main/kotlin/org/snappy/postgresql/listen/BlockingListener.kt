@@ -7,6 +7,7 @@ import java.sql.Connection
 import java.sql.SQLException
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 
@@ -14,6 +15,7 @@ class BlockingListener<C>(
     private val connection: C,
     private val listenChannel: String,
     buffer: UInt = 100u,
+    checkNotificationsDelay: UInt = 100u,
 ) where
     C : PGConnection,
     C : Connection
@@ -25,35 +27,44 @@ class BlockingListener<C>(
     }
     private val blockingQueue: BlockingQueue<PGNotification> = ArrayBlockingQueue(buffer.toInt())
     private val running = AtomicBoolean(false)
+    private val checkNotificationsDelay = checkNotificationsDelay.toLong()
 
     fun start() {
+        running.set(true)
         thread(start = true) {
             require(!connection.isClosed) { "Cannot listen to a closed connection" }
-            connection.createStatement().use {
-                it.execute("LISTEN $listenChannel")
-            }
-            while (running.get()) {
+            connection.use { c ->
                 try {
-                    require(!connection.isClosed) { "Cannot listen to a closed connection" }
-                    connection.notifications?.let { pgNotifications ->
-                        for (notification in pgNotifications) {
-                            blockingQueue.put(notification)
-                        }
-                    }
-                    Thread.sleep(500)
-                } catch (sqlException: SQLException) {
-                    log.error(sqlException) {
-                        "Encountered SQL error listening to Postgres connection"
-                    }
-                    break
-                } catch (ex: Throwable) {
-                    log.error(ex) {
-                        "Encountered unknown error listening to Postgres connection"
-                    }
-                    break
+                    c.listen(listenChannel)
+                    listen()
+                } finally {
+                    c.unlisten(listenChannel)
                 }
             }
-            blockingQueue.clear()
+        }
+    }
+
+    private fun listen() {
+        while (running.get()) {
+            try {
+                require(!connection.isClosed) { "Cannot listen to a closed connection" }
+                connection.notifications?.let { pgNotifications ->
+                    for (notification in pgNotifications) {
+                        blockingQueue.put(notification)
+                    }
+                }
+                Thread.sleep(checkNotificationsDelay)
+            } catch (sqlException: SQLException) {
+                log.error(sqlException) {
+                    "Encountered SQL error listening to Postgres connection"
+                }
+                break
+            } catch (ex: Throwable) {
+                log.error(ex) {
+                    "Encountered unknown error listening to Postgres connection"
+                }
+                break
+            }
         }
     }
 
@@ -61,5 +72,10 @@ class BlockingListener<C>(
         running.set(false)
     }
 
-    fun receive(): PGNotification = blockingQueue.take()
+    fun receive(
+        timeout: ULong = 500u,
+        timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
+    ): PGNotification? {
+        return blockingQueue.poll(timeout.toLong(), timeUnit)
+    }
 }

@@ -9,31 +9,34 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 
 class BlockingCallbackListener<C>(
-    private val listenerConnection: C,
+    private val connection: C,
     private val listenChannel: String,
+    checkNotificationsDelay: UInt = 100u,
     private val callback: (PGNotification) -> Unit
 ) where
     C : PGConnection,
     C : Connection
 {
     private val log by logger()
-    init {
-        require(!listenerConnection.isClosed) { "Cannot listen to a closed connection" }
-        validateChannelName(listenChannel)
-    }
     private val running = AtomicBoolean(false)
+    private val checkNotificationsDelay = checkNotificationsDelay.toLong()
 
     fun start() {
+        running.set(true)
         thread(start = true) {
-            listenerConnection.use { c -> listen(c) }
+            require(!connection.isClosed) { "Cannot listen to a closed connection" }
+            connection.use { c ->
+                try {
+                    c.listen(listenChannel)
+                    listen()
+                } finally {
+                    c.unlisten(listenChannel)
+                }
+            }
         }
     }
 
-    private fun listen(connection: C) {
-        require(!connection.isClosed) { "Cannot listen to a closed connection" }
-        connection.createStatement().use {
-            it.execute("LISTEN $listenChannel")
-        }
+    private fun listen() {
         while (running.get()) {
             try {
                 require(!connection.isClosed) { "Cannot listen to a closed connection" }
@@ -42,7 +45,7 @@ class BlockingCallbackListener<C>(
                         callback(notification)
                     }
                 }
-                Thread.sleep(500)
+                Thread.sleep(checkNotificationsDelay)
             } catch (sqlException: SQLException) {
                 log.error(sqlException) {
                     "Encountered SQL error listening to Postgres connection"
