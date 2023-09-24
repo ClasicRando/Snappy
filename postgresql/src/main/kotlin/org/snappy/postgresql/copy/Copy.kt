@@ -1,11 +1,9 @@
 package org.snappy.postgresql.copy
 
 import org.postgresql.PGConnection
+import org.snappy.logging.logger
 import java.io.InputStream
 import java.math.BigDecimal
-import java.sql.Date
-import java.sql.Time
-import java.sql.Timestamp
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -52,9 +50,8 @@ internal fun getCopyCommand(
 
 /**
  * Accepts a nullable object and formats the value to string. Most of the formatting is for
- * Date-like types that all get converted to ISO formats. NOTE: [Timestamp], [Date] and [Instant]
- * values are set to [ZoneOffset.UTC] before formatting so the values copied to the table will be of
- * the same zone.
+ * Date-like types that all get converted to ISO formats. NOTE: [Instant] values are set to
+ * [ZoneOffset.UTC] before formatting so the values copied to the table will be of the same zone.
  */
 @PublishedApi
 internal fun formatObject(value: Any?): String {
@@ -74,9 +71,26 @@ internal fun formatObject(value: Any?): String {
     }
 }
 
+/** Logger for blocking copy operations */
+private val log by logger()
+
 /** Copy an [inputStream] through the connection using the [copyCommand] specified */
 fun PGConnection.copyIn(copyCommand: String, inputStream: InputStream): Long {
-    return copyAPI.copyIn(copyCommand, inputStream)
+    val result = try {
+        copyAPI.copyIn(copyCommand, inputStream)
+    } catch (ex: Throwable) {
+        log.atError {
+            message = "Error during copy"
+            cause = ex
+            payload = mapOf("copy command" to copyCommand)
+        }
+        throw ex
+    }
+    log.atInfo {
+        message = "Completed copying $result records from InputStream"
+        payload = mapOf("copy command" to copyCommand)
+    }
+    return result
 }
 
 /**
@@ -111,16 +125,26 @@ internal fun PGConnection.copyInInternal(
     records: Sequence<Iterable<String>>,
 ): Long {
     val copyStream = copyAPI.copyIn(copyCommand)
-    return try {
+    val result = try {
         for (record in records) {
             val bytes = recordToCsvBytes(record)
             copyStream.writeToCopy(bytes, 0, bytes.size)
         }
         copyStream.endCopy()
-    } catch (ex: Exception) {
+    } catch (ex: Throwable) {
+        log.atError {
+            message = "Error during copy"
+            cause = ex
+            payload = mapOf("copy command" to copyCommand)
+        }
         try { copyStream.cancelCopy() } catch (_: Exception) {}
         throw ex
     }
+    log.atInfo {
+        message = "Completed copying $result records from sequence of items"
+        payload = mapOf("copy command" to copyCommand)
+    }
+    return result
 }
 
 /** Execute the [copyCommand] provided, writing the [records] to the server */

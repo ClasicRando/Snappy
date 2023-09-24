@@ -8,7 +8,11 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import org.postgresql.PGConnection
+import org.snappy.logging.logger
 import java.io.InputStream
+
+/** Logger for suspending copy operations */
+private val log by logger()
 
 /**
  * Copy an [inputStream] through the connection using the [copyCommand] specified. Operation is
@@ -18,7 +22,21 @@ suspend fun PGConnection.copyInSuspend(
     copyCommand: String,
     inputStream: InputStream,
 ): Long = withContext(Dispatchers.IO) {
-    copyAPI.copyIn(copyCommand, inputStream)
+    val result = try {
+        copyAPI.copyIn(copyCommand, inputStream)
+    } catch (ex: Throwable) {
+        log.atError {
+            message = "Error during copy"
+            cause = ex
+            payload = mapOf("copy command" to copyCommand)
+        }
+        throw ex
+    }
+    log.atInfo {
+        message = "Completed copying $result records from InputStream"
+        payload = mapOf("copy command" to copyCommand)
+    }
+    result
 }
 
 /**
@@ -56,16 +74,26 @@ internal suspend fun PGConnection.copyInSuspendInternal(
     records: Flow<Iterable<String>>,
 ): Long = withContext(Dispatchers.IO) {
     val copyStream = copyAPI.copyIn(copyCommand)
-    try {
+    val result = try {
         records.flowOn(Dispatchers.IO).collect { record ->
             val bytes = recordToCsvBytes(record)
             copyStream.writeToCopy(bytes, 0, bytes.size)
         }
         copyStream.endCopy()
     } catch (ex: Exception) {
+        log.atError {
+            message = "Error during copy"
+            cause = ex
+            payload = mapOf("copy command" to copyCommand)
+        }
         try { copyStream.cancelCopy() } catch (_: Exception) {}
         throw ex
     }
+    log.atInfo {
+        message = "Completed copying $result records from sequence of items"
+        payload = mapOf("copy command" to copyCommand)
+    }
+    result
 }
 
 /**
