@@ -13,17 +13,15 @@ object SnappyMapper {
             val text = file.readText()
             Json.decodeFromString<SnappyConfig>(text)
         } else {
-            SnappyConfig(basePackages = mutableListOf())
+            SnappyConfig(packages = mutableListOf())
         }
-        config.basePackages.add("org.snappy")
+        config.packages.add("org.snappy")
         config
     }
 
-    @PublishedApi
-    internal val rowParserCache = RowParserCache(config)
+    val rowParserCache = RowParserCache(config)
 
-    @PublishedApi
-    internal val decoderCache = DecoderCache(config)
+    val decoderCache = DecoderCache(config)
 
     /**
      * Method to ensure the cache is loaded before continuing. This will force the lazy initialized
@@ -33,6 +31,10 @@ object SnappyMapper {
     fun loadCache() {
         rowParserCache.loadCache()
         decoderCache.loadCache()
+    }
+
+    fun temp() {
+        println(decoderCache.cache.entries.joinToString("\n") { "${it.key} -> ${it.value}" })
     }
 
     init { loadCache() }

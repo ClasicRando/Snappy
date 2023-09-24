@@ -8,6 +8,7 @@ import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class DecoderCacheTest {
@@ -15,7 +16,7 @@ class DecoderCacheTest {
     private val decoderCache = DecoderCache(config)
 
     @Test
-    fun `insertOrReplace should populate cache when valid parser class`() {
+    fun `insertOrReplace should populate cache when valid decoder class`() {
         decoderCache.insertOrReplace<RowClass> { RowClass("") }
     }
 
@@ -29,8 +30,14 @@ class DecoderCacheTest {
     }
 
     @Test
-    fun `getOrDefault should return null when no parser present`() {
+    fun `getOrNull should return null when no decoder present`() {
         val existingParser = decoderCache.getOrNull<CacheMissDecoderClass>()
         assertNull(existingParser)
+    }
+
+    @Test
+    fun `getOrDefault should return default decoder when no decoder present`() {
+        val primitiveDecoder = decoderCache.getOrDefault<Int>()
+        assertSame(primitiveDecoder, SnappyMapper.decoderCache.defaultDecoder)
     }
 }

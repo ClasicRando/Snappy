@@ -5,9 +5,9 @@ import kotlinx.coroutines.withContext
 import org.snappy.rowparse.RowParser
 import org.snappy.SnappyMapper
 import org.snappy.statement.StatementType
-import org.snappy.extensions.columNames
+import org.snappy.extensions.columnNames
 import org.snappy.extensions.getStatement
-import org.snappy.extensions.toSnappyRow
+import org.snappy.rowparse.SnappyRowImpl
 import java.sql.Connection
 
 /**
@@ -30,8 +30,9 @@ internal fun <T> queryImpl(
 ): Sequence<T> = sequence {
     connection.getStatement(sql, parameters, statementType, timeout).use { preparedStatement ->
         preparedStatement.executeQuery().use { rs ->
+            val columnNames = rs.columnNames
             while (rs.next()) {
-                val row = rs.toSnappyRow(rs.columNames)
+                val row = SnappyRowImpl(rs, columnNames)
                 yield(rowParser.parseRow(row))
             }
         }

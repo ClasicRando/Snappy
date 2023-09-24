@@ -9,3 +9,4 @@ rootProject.name = "snappy"
 
 include(":core")
 include("benchmark")
+include("postgresql")

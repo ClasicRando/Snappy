@@ -8,7 +8,7 @@ import org.snappy.rowparse.SnappyRow
 data class CompanionObjectParser(val field: String) {
     companion object : RowParser<CompanionObjectParser> {
         override fun parseRow(row: SnappyRow): CompanionObjectParser {
-            return CompanionObjectParser(row.getAs("field")!!)
+            return CompanionObjectParser(row.getString("field"))
         }
     }
 }

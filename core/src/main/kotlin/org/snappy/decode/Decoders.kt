@@ -8,8 +8,9 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 class InstantDecoder : Decoder<Instant> {
-    override fun decode(value: Any): Instant {
+    override fun decode(value: Any?): Instant? {
         return when (value) {
+            null -> null
             is Instant -> value
             is Timestamp -> Instant.ofEpochMilli(value.time)
             is String -> {

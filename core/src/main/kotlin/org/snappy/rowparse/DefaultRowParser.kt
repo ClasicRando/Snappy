@@ -5,6 +5,7 @@ import org.snappy.NoDefaultConstructor
 import org.snappy.NullSet
 import org.snappy.SnappyMapper
 import org.snappy.annotations.SnappyColumn
+import org.snappy.decode.decodeWithType
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KVisibility
@@ -46,20 +47,12 @@ class DefaultRowParser<T : Any>(private val rowClass: KClass<T>) : RowParser<T> 
         }
         .mapNotNull { prop -> prop as? KMutableProperty<*> }
         .map { prop ->
-            val decoder = SnappyMapper.decoderCache.getOrNull(prop.returnType)
+            val decoder = SnappyMapper.decoderCache.getOrDefault(prop.returnType)
             Triple(
                 propertyAnnotations[prop.name] ?: prop.name,
                 prop,
-            ) { value: Any? ->
-                if (value == null) {
-                    if (prop.returnType.isMarkedNullable) {
-                        return@Triple null
-                    } else {
-                        throw NullSet(prop.name)
-                    }
-                }
-                decoder?.decode(value) ?: value
-            }
+                decoder,
+            )
         }
         .toList()
 
@@ -72,7 +65,11 @@ class DefaultRowParser<T : Any>(private val rowClass: KClass<T>) : RowParser<T> 
         properties.asSequence()
             .filter { (name, _, _) -> row.containsKey(name) }
             .forEach { (name, prop, decoder) ->
-                val value = decoder(row.get(name))
+                val value = decoder.decodeWithType(
+                    prop.returnType,
+                    prop.name,
+                    row.getAnyNullable(name),
+                )
                 try {
                     prop.setter.call(newInstance, value)
                 } catch (_: IllegalArgumentException) {
