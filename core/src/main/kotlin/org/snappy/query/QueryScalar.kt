@@ -7,7 +7,6 @@ import org.snappy.statement.StatementType
 import org.snappy.extensions.columnNames
 import org.snappy.extensions.getStatement
 import org.snappy.rowparse.SnappyRowImpl
-import org.snappy.rowparse.getObjectNullable
 import java.sql.Connection
 import kotlin.reflect.KClass
 
