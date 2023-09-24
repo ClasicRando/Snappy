@@ -86,7 +86,7 @@ fun PGConnection.copyIn(copyCommand: String, inputStream: InputStream): Long {
         }
         throw ex
     }
-    log.atInfo {
+    log.atTrace {
         message = "Completed copying $result records from InputStream"
         payload = mapOf("copy command" to copyCommand)
     }
@@ -140,7 +140,7 @@ internal fun PGConnection.copyInInternal(
         try { copyStream.cancelCopy() } catch (_: Exception) {}
         throw ex
     }
-    log.atInfo {
+    log.atTrace {
         message = "Completed copying $result records from sequence of items"
         payload = mapOf("copy command" to copyCommand)
     }

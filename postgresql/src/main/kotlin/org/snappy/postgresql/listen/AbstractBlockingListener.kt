@@ -61,7 +61,7 @@ abstract class AbstractBlockingListener<C>(
                 require(!connection.isClosed) { "Cannot listen to a closed connection" }
                 connection.notifications?.let { pgNotifications ->
                     for (notification in pgNotifications) {
-                        log.atInfo {
+                        log.atTrace {
                             message = "Received a notification"
                             payload = mapOf(
                                 "Name" to notification.name,
