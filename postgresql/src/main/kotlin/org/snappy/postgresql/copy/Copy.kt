@@ -1,6 +1,7 @@
 package org.snappy.postgresql.copy
 
 import org.postgresql.PGConnection
+import org.snappy.copy.ToObjectRow
 import org.snappy.logging.logger
 import java.io.InputStream
 import java.math.BigDecimal
@@ -17,7 +18,7 @@ import java.time.format.DateTimeFormatter
  * Converts an array of String values to a ByteArray that reflects a CSV record. Used to pipe output
  * to COPY command
  */
-internal fun recordToCsvBytes(record: Iterable<String>): ByteArray {
+internal fun recordToCsvBytes(record: Sequence<String>): ByteArray {
     return record.joinToString(separator = "\",\"", prefix = "\"", postfix = "\"\n") { value ->
         value.replace("\"", "\"\"")
     }.toByteArray()
@@ -122,7 +123,7 @@ fun PGConnection.copyIn(
 @PublishedApi
 internal fun PGConnection.copyInInternal(
     copyCommand: String,
-    records: Sequence<Iterable<String>>,
+    records: Sequence<Sequence<String>>,
 ): Long {
     val copyStream = copyAPI.copyIn(copyCommand)
     val result = try {
@@ -149,7 +150,7 @@ internal fun PGConnection.copyInInternal(
 
 /** Execute the [copyCommand] provided, writing the [records] to the server */
 fun <T : ToCsvRow> PGConnection.copyInCsv(copyCommand: String, records: Sequence<T>): Long {
-    return copyInInternal(copyCommand, records.map { it.toCsvRow() })
+    return copyInInternal(copyCommand, records.map { it.toCsvRow().asSequence() })
 }
 
 /**
@@ -196,7 +197,9 @@ inline fun <T : ToCsvRow> PGConnection.copyInCsv(
 fun <T : ToObjectRow> PGConnection.copyInRow(copyCommand: String, records: Sequence<T>): Long {
     return copyInInternal(
         copyCommand,
-        records.map { record -> record.toObjectRow().map { obj -> formatObject(obj) } },
+        records.map { record ->
+            record.toObjectRow().asSequence().map { obj -> formatObject(obj) }
+        },
     )
 }
 

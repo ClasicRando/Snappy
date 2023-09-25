@@ -1,7 +1,7 @@
 package org.snappy.postgresql.data
 
 import org.snappy.postgresql.copy.ToCsvRow
-import org.snappy.postgresql.copy.ToObjectRow
+import org.snappy.copy.ToObjectRow
 import org.snappy.postgresql.copy.formatObject
 import java.math.BigDecimal
 import java.time.LocalDate
