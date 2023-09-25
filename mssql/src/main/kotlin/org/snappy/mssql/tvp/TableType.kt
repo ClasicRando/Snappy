@@ -12,7 +12,13 @@ abstract class AbstractTableType<R : ToTvpRow>(rows: Iterable<R>) : Encode {
         for ((name, typeId) in columns) {
             addColumnMetadata(name, typeId)
         }
+        var hasCheckedSize = false
         for (row in rows) {
+            val items = row.toTvpRow()
+            if (!hasCheckedSize) {
+                check(columns.size == items.size)
+                hasCheckedSize = true
+            }
             addRow(*row.toTvpRow())
         }
     }
