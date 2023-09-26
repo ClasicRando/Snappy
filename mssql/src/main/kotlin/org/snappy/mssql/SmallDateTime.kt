@@ -10,15 +10,15 @@ import java.time.format.DateTimeFormatter
 
 class SmallDateTime(localDateTime: LocalDateTime) : Encode {
     val value: LocalDateTime = localDateTime.withSecond(0)
-    private val valueAsStr = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:00")
+    private val valueAsStr: String = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:00")
         .format(value)
-
-    override fun toString(): String {
-        return valueAsStr
-    }
 
     override fun encode(preparedStatement: PreparedStatement, parameterIndex: Int) {
         preparedStatement.setObject(parameterIndex, valueAsStr, microsoft.sql.Types.SMALLDATETIME)
+    }
+
+    override fun toString(): String {
+        return valueAsStr
     }
 
     override fun equals(other: Any?): Boolean {
@@ -29,9 +29,7 @@ class SmallDateTime(localDateTime: LocalDateTime) : Encode {
     }
 
     override fun hashCode(): Int {
-        var result = value?.hashCode() ?: 0
-        result = 31 * result + (valueAsStr?.hashCode() ?: 0)
-        return result
+        return 31 * value.hashCode() + valueAsStr.hashCode()
     }
 
     companion object : Decoder<SmallDateTime> {

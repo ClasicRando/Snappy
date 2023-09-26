@@ -1,12 +1,13 @@
 package org.snappy.mssql.tvp
 
 import org.snappy.annotations.SnappyColumn
+import org.snappy.mssql.DateTime
 import org.snappy.mssql.SmallDateTime
+import org.snappy.mssql.toDateTime
 import org.snappy.mssql.toSmallDateTime
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.sql.Timestamp
-import java.text.DecimalFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -33,8 +34,8 @@ data class TvpTestRow(
     val numericField: BigDecimal,
     @SnappyColumn("date_field")
     val dateField: LocalDate,
-    @SnappyColumn("timestamp_field")
-    val timestampField: LocalDateTime,
+    @SnappyColumn("datetime_field")
+    val datetimeField: DateTime,
     @SnappyColumn("smalldatetime_field")
     val smallDateTimeField: SmallDateTime,
     @SnappyColumn("datetimeoffset_field")
@@ -53,7 +54,7 @@ data class TvpTestRow(
             textField,
             numericField,
             dateField,
-            timestampField,
+            datetimeField.toString(),
             smallDateTimeField.toString(),
             dateTimeOffsetField,
             timeField
@@ -78,7 +79,8 @@ data class TvpTestRow(
                 UUID.randomUUID().toString(),
                 BigDecimal(random.nextDouble() * 10_000).setScale(5, RoundingMode.FLOOR),
                 LocalDate.ofEpochDay(random.nextLong(0, 30000)),
-                LocalDateTime.ofEpochSecond(random.nextLong(0, 2524554080), 0, ZoneOffset.UTC),
+                LocalDateTime.ofEpochSecond(random.nextLong(0, 2524554080), 0, ZoneOffset.UTC)
+                    .toDateTime(),
                 LocalDateTime.ofEpochSecond(random.nextLong(0, 2524554080), 0, ZoneOffset.UTC)
                     .toSmallDateTime(),
                 microsoft.sql.DateTimeOffset.valueOf(

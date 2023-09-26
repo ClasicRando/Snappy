@@ -11,7 +11,7 @@ class TvpTest(rows: Iterable<TvpTestRow>) : AbstractTableType<TvpTestRow>(rows) 
         "text_field" to java.sql.Types.VARCHAR,
         "numeric_field" to java.sql.Types.NUMERIC,
         "date_field" to java.sql.Types.DATE,
-        "timestamp_field" to java.sql.Types.TIMESTAMP,
+        "datetime_field" to microsoft.sql.Types.DATETIME,
         "smalldatetime_field" to microsoft.sql.Types.SMALLDATETIME,
         "datetimeoffset_field" to microsoft.sql.Types.DATETIMEOFFSET,
         "time_field" to java.sql.Types.TIME,

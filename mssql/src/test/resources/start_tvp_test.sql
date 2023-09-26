@@ -10,7 +10,7 @@ begin
         text_field text,
         numeric_field decimal(9,5),
         date_field date,
-        timestamp_field datetime,
+        datetime_field datetime,
         smalldatetime_field smalldatetime,
         datetimeoffset_field datetimeoffset,
         time_field time
