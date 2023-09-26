@@ -68,7 +68,8 @@ class DefaultRowParser<T : Any>(private val rowClass: KClass<T>) : RowParser<T> 
                 val value = decoder.decodeWithType(
                     prop.returnType,
                     prop.name,
-                    row.getAnyNullable(name),
+                    row,
+                    name,
                 )
                 try {
                     prop.setter.call(newInstance, value)

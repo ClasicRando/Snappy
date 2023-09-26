@@ -17,7 +17,7 @@ class DecoderCacheTest {
 
     @Test
     fun `insertOrReplace should populate cache when valid decoder class`() {
-        decoderCache.insertOrReplace<RowClass> { RowClass("") }
+        decoderCache.insertOrReplace<RowClass> { _, _ ->  RowClass("") }
     }
 
     @Test

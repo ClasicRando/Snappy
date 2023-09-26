@@ -61,4 +61,3 @@ suspend inline fun <R : ToObjectRow> ISQLServerConnection.bulkCopySequenceSuspen
     destinationTable: String,
     crossinline builder: suspend SequenceScope<R>.() -> Unit,
 ) = bulkCopySequenceSuspend<R>(destinationTable, sequence { builder() })
-
