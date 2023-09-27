@@ -2,6 +2,10 @@ package org.snappy.mssql.bulkcopy
 
 import com.microsoft.sqlserver.jdbc.ISQLServerConnection
 
+/**
+ * Fetches the column details about a destination table to provide the data required for a bulk copy
+ * operation
+ */
 internal fun ISQLServerConnection.fetchMetadata(
     destinationTable: String,
 ): Map<Int, BulkCopyColumnMetadata> = buildMap {

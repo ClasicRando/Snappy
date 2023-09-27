@@ -4,6 +4,13 @@ import com.microsoft.sqlserver.jdbc.SQLServerDataTable
 import org.snappy.encode.Encode
 import java.sql.PreparedStatement
 
+/**
+ * Base class for custom Table Valued Parameter types. Stores an [Iterable] of [ToTvpRow] items that
+ * are packed into a [SQLServerDataTable] when encoding. To create custom table types within your
+ * code, create a data class that implements [ToTvpRow], then extend this class and provide the
+ * [typeName] and [columns] details. Any instances of that derived class would then have the ability
+ * to be encoded into a [PreparedStatement].
+ */
 abstract class AbstractTableType<R : ToTvpRow>(private val rows: Iterable<R>) : Encode {
     abstract val typeName: String
     abstract val columns: List<Pair<String, Int>>

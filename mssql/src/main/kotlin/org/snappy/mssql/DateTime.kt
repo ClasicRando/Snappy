@@ -8,6 +8,12 @@ import java.sql.PreparedStatement
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+/**
+ * Wrapper of a [LocalDateTime] used to represent the datetime type in SQL Server. The data type
+ * stores a maximum precision of 0.00333 seconds for the values so the second and nano value of the
+ * underling [LocalDateTime] are altered when creating a [DateTime]. The type is able to be encoded
+ * into a [PreparedStatement] and decoded from a [SnappyRow].
+ */
 class DateTime(datetime: LocalDateTime) : Encode {
     val value: LocalDateTime = datetime.let {
         val nanoAsStr = "%09d".format(it.nano)
@@ -51,4 +57,5 @@ class DateTime(datetime: LocalDateTime) : Encode {
     }
 }
 
+/** Convert a [LocalDateTime] to a [DateTime]. Creates a new [LocalDateTime] from this value */
 fun LocalDateTime.toDateTime() = DateTime(this)

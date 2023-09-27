@@ -10,6 +10,10 @@ import java.io.InputStream
 import java.sql.ResultSet
 import javax.sql.RowSet
 
+/**
+ * Bulk copy a [ResultSet] to a [destinationTable]. Creates a new instance of [SQLServerBulkCopy]
+ * and calls [SQLServerBulkCopy.writeToServer] with the [ResultSet].
+ */
 fun ISQLServerConnection.bulkCopy(
     destinationTable: String,
     sourceData: ResultSet,
@@ -25,6 +29,10 @@ fun ISQLServerConnection.bulkCopy(
     }
 }
 
+/**
+ * Bulk copy a [RowSet] to a [destinationTable]. Creates a new instance of [SQLServerBulkCopy] and
+ * calls [SQLServerBulkCopy.writeToServer] with the [RowSet].
+ */
 fun ISQLServerConnection.bulkCopy(
     destinationTable: String,
     sourceData: RowSet,
@@ -40,6 +48,10 @@ fun ISQLServerConnection.bulkCopy(
     }
 }
 
+/**
+ * Bulk copy a [ISQLServerBulkData] to a [destinationTable]. Creates a new instance of
+ * [SQLServerBulkCopy] and calls [SQLServerBulkCopy.writeToServer] with the [ISQLServerBulkData].
+ */
 fun ISQLServerConnection.bulkCopy(
     destinationTable: String,
     sourceData: ISQLServerBulkData,
@@ -54,6 +66,13 @@ fun ISQLServerConnection.bulkCopy(
     }
 }
 
+/**
+ * Bulk copy a csv file specified at [sourceFile] to a [destinationTable]. Creates a new instance of
+ * [SQLServerBulkCopy] and [SQLServerBulkCSVFileRecord] (with the various options passed included),
+ * calling [SQLServerBulkCopy.writeToServer] with the [SQLServerBulkCSVFileRecord]. The structure of
+ * the data within the csv file must match the [destinationTable] and must be implicitly convertible
+ * to the required column type.
+ */
 fun ISQLServerConnection.bulkCopyCsvFile(
     destinationTable: String,
     sourceFile: String,
@@ -88,6 +107,13 @@ fun ISQLServerConnection.bulkCopyCsvFile(
     }
 }
 
+/**
+ * Bulk copy a csv file provided as an [InputStream] to a [destinationTable]. Creates a new instance
+ * of [SQLServerBulkCopy] and [SQLServerBulkCSVFileRecord] (with the various options passed
+ * included), calling [SQLServerBulkCopy.writeToServer] with the [SQLServerBulkCSVFileRecord]. The
+ * structure of the data within the csv file must match the [destinationTable] and must be
+ * implicitly convertible to the required column type.
+ */
 fun ISQLServerConnection.bulkCopyCsvFile(
     destinationTable: String,
     sourceFile: InputStream,
@@ -122,24 +148,31 @@ fun ISQLServerConnection.bulkCopyCsvFile(
     }
 }
 
+/**
+ * Bulk copy a [Sequence] of [ToObjectRow] provided to a [destinationTable]. Creates a new instance
+ * of [SQLServerBulkCopy], calling [SQLServerBulkCopy.writeToServer] with the [sequence] wrapped as
+ * an [ISQLServerBulkData]. The structure of the data within the [Sequence] must match the
+ * [destinationTable] and must be implicitly convertible to the required column type.
+ */
 fun <R : ToObjectRow> ISQLServerConnection.bulkCopySequence(
     destinationTable: String,
     sequence: Sequence<R>,
     bulkCopyOptions: SQLServerBulkCopyOptions = SQLServerBulkCopyOptions(),
 ) {
-    require(!isClosed) { "Cannot bulk copy on a closed connection" }
-    SQLServerBulkCopy(this).apply {
-        destinationTableName = destinationTable
-        this.bulkCopyOptions = bulkCopyOptions
-    }.use {
-        val sourceData = SequenceBulkCopy(
-            sequence,
-            fetchMetadata(destinationTable),
-        )
-        it.writeToServer(sourceData)
-    }
+    val sourceData = SequenceBulkCopy(
+        sequence,
+        fetchMetadata(destinationTable),
+    )
+    bulkCopy(destinationTable, sourceData, bulkCopyOptions)
 }
 
+/**
+ * Bulk copy a [Sequence] of [ToObjectRow] provided to a [destinationTable]. The [builder] is used
+ * to create a new instance of [Sequence] for pushing results through the bulk copy. Creates a new
+ * instance of [SQLServerBulkCopy], calling [SQLServerBulkCopy.writeToServer] with the [sequence]
+ * wrapped as an [ISQLServerBulkData]. The structure of the data within the [Sequence] must match
+ * the [destinationTable] and must be implicitly convertible to the required column type.
+ */
 inline fun <R : ToObjectRow> ISQLServerConnection.bulkCopySequence(
     destinationTable: String,
     bulkCopyOptions: SQLServerBulkCopyOptions = SQLServerBulkCopyOptions(),

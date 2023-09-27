@@ -4,11 +4,20 @@ import com.microsoft.sqlserver.jdbc.ISQLServerBulkData
 import org.snappy.copy.ToObjectRow
 import org.snappy.mssql.SmallDateTime
 
+/**
+ * Custom implementation of [ISQLServerBulkData] for [Sequence]s. Continuously iterates over a
+ * [Sequence] that returns elements of [ToObjectRow]. Uses the [Iterator] that a [Sequence] returns
+ * (by calling [Sequence.iterator]) to continuously pull from the [Sequence] and provide those
+ * values when [getRowData] is called. This allows for any lazy yielding operation to perform bulk
+ * inserts by simply expressing the yielding as a [Sequence].
+ */
 internal class SequenceBulkCopy<R : ToObjectRow>(
     sequence: Sequence<R>,
     private val metadata: Map<Int, BulkCopyColumnMetadata>,
 ) : ISQLServerBulkData {
+    /** Backing [Iterator] of the [Sequence] provided */
     private val iterator = sequence.iterator()
+    /** [Set] of ordinals specified by the [metadata] provided */
     private val columnOrdinals: Set<Int> = metadata.keys.toSet()
 
     override fun getColumnOrdinals(): Set<Int> = columnOrdinals
@@ -28,6 +37,7 @@ internal class SequenceBulkCopy<R : ToObjectRow>(
     override fun getRowData(): Array<Any?> {
         val row = iterator.next().toObjectRow()
         return Array(row.size) {
+            // Not all types are made equal, smalldatetime needs a special case for bulk copy
             when (val value = row[it]) {
                 is SmallDateTime -> value.bulkCopyString()
                 else -> value
