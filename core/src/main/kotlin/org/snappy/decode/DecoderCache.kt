@@ -49,7 +49,9 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
         return cache
     }
 
-    internal val defaultDecoder = Decoder { it }
+    internal val defaultDecoder = Decoder { row, fieldName ->
+        row.getAnyNullable(fieldName)
+    }
 
     /**
      * Get a [Decoder] for the provided type [rowType]. Checks the [cache] for an existing

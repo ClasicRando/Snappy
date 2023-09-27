@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import org.postgresql.PGConnection
+import org.snappy.copy.ToObjectRow
 import org.snappy.logging.logger
 import java.io.InputStream
 
@@ -71,7 +72,7 @@ suspend fun PGConnection.copyInSuspend(
 @PublishedApi
 internal suspend fun PGConnection.copyInSuspendInternal(
     copyCommand: String,
-    records: Flow<Iterable<String>>,
+    records: Flow<Sequence<String>>,
 ): Long = withContext(Dispatchers.IO) {
     val copyStream = copyAPI.copyIn(copyCommand)
     val result = try {
@@ -104,7 +105,7 @@ suspend fun <T : ToCsvRow> PGConnection.copyInCsvSuspend(
     copyCommand: String,
     records: Flow<T>,
 ): Long {
-    return copyInSuspendInternal(copyCommand, records.map { it.toCsvRow() })
+    return copyInSuspendInternal(copyCommand, records.map { it.toCsvRow().asSequence() })
 }
 
 /**
@@ -131,7 +132,7 @@ suspend inline fun <T : ToCsvRow> PGConnection.copyInCsvSuspend(
     copyCommand: String,
     crossinline records: suspend FlowCollector<T>.() -> Unit,
 ): Long {
-    return copyInSuspendInternal(copyCommand, flow { records() }.map { it.toCsvRow() })
+    return copyInCsvSuspend(copyCommand, flow { records() })
 }
 
 /**
@@ -161,7 +162,9 @@ suspend fun <T : ToObjectRow> PGConnection.copyInRowSuspend(
 ): Long {
     return copyInSuspendInternal(
         copyCommand,
-        records.map { record -> record.toObjectRow().map { obj -> formatObject(obj) } },
+        records.map {
+            record -> record.toObjectRow().asSequence().map { obj -> formatObject(obj) }
+        },
     )
 }
 
@@ -189,12 +192,10 @@ suspend inline fun <T : ToObjectRow> PGConnection.copyInRowSuspend(
     copyCommand: String,
     crossinline records: suspend FlowCollector<T>.() -> Unit,
 ): Long {
-    return copyInSuspendInternal(
+    return copyInRowSuspend(
         copyCommand,
         flow {
             records()
-        }.map { record ->
-            record.toObjectRow().map { obj -> formatObject(obj) }
         },
     )
 }

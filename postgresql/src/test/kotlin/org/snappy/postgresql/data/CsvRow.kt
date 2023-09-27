@@ -1,7 +1,7 @@
 package org.snappy.postgresql.data
 
 import org.snappy.postgresql.copy.ToCsvRow
-import org.snappy.postgresql.copy.ToObjectRow
+import org.snappy.copy.ToObjectRow
 import org.snappy.postgresql.copy.formatObject
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -28,7 +28,7 @@ data class CsvRow(
     val timeTzField: OffsetTime
 ) : ToObjectRow, ToCsvRow {
 
-    override fun toObjectRow(): Iterable<Any?> {
+    override fun toObjectRow(): List<Any?> {
         return listOf(
             boolField,
             smallintField,
@@ -46,8 +46,8 @@ data class CsvRow(
         )
     }
 
-    override fun toCsvRow(): Iterable<String> {
-        return toObjectRow().map { formatObject(it) }
+    override fun toCsvRow(): Array<String> {
+        return toObjectRow().map { formatObject(it) }.toTypedArray()
     }
 
     companion object {

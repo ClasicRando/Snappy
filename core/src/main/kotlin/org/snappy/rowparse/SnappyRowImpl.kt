@@ -137,7 +137,7 @@ class SnappyRowImpl(
     override fun getAny(key: String): Any = resultSet.getObject(key)
         ?: error("Expected not null object value but found null")
 
-    override fun <T : Any?> getObjectNullable(key: String, type: Class<T>): T {
+    override fun <T : Any> getObjectNullable(key: String, type: Class<T>): T? {
         return resultSet.getObject(key, type)
     }
 

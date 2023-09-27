@@ -76,14 +76,14 @@ interface SnappyRow {
 
     fun getAny(key: String): Any
 
-    fun <T : Any?> getObjectNullable(key: String, type: Class<T>): T
+    fun <T : Any> getObjectNullable(key: String, type: Class<T>): T?
 
     fun <T : Any> getObject(key: String, type: Class<T>): T
 
     fun getArray(key: String): Array
 }
 
-inline fun <reified T : Any?> SnappyRow.getObjectNullable(key: String): T {
+inline fun <reified T : Any> SnappyRow.getObjectNullable(key: String): T? {
     return getObjectNullable(key, T::class.java)
 }
 
