@@ -10,7 +10,10 @@ import java.time.format.DateTimeFormatter
 
 class SmallDateTime(localDateTime: LocalDateTime) : Encode {
     val value: LocalDateTime = localDateTime.withSecond(0)
-    private val valueAsStr: String = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:00")
+    private val valueAsStr: String = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm")
+        .format(value)
+
+    internal fun bulkCopyString(): String = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm")
         .format(value)
 
     override fun encode(preparedStatement: PreparedStatement, parameterIndex: Int) {

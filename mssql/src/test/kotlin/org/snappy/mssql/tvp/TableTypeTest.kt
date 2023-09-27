@@ -43,7 +43,7 @@ class TableTypeTest {
     }
 
     @Test
-    fun `test 1`() {
+    fun `encode table type should succeed for implementation of AbstractTableType`() {
         val rows = (1..10_00).map { TvpTestRow.random() }
         val testTableType = TvpTest(rows)
         useConnection {  c ->

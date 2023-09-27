@@ -1,6 +1,5 @@
 package org.snappy.mssql
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.snappy.decode.Decoder
 import org.snappy.encode.Encode
 import org.snappy.rowparse.SnappyRow

@@ -1,12 +1,14 @@
 package org.snappy.mssql.tvp
 
 import org.snappy.annotations.SnappyColumn
+import org.snappy.copy.ToObjectRow
 import org.snappy.mssql.DateTime
 import org.snappy.mssql.SmallDateTime
 import org.snappy.mssql.toDateTime
 import org.snappy.mssql.toSmallDateTime
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.sql.Date
 import java.sql.Timestamp
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -42,7 +44,7 @@ data class TvpTestRow(
     val dateTimeOffsetField: microsoft.sql.DateTimeOffset,
     @SnappyColumn("time_field")
     val timeField: LocalTime,
-) : ToTvpRow {
+) : ToTvpRow, ToObjectRow {
     override fun toTvpRow(): Array<Any?> {
         return arrayOf(
             boolField,
@@ -56,6 +58,24 @@ data class TvpTestRow(
             dateField,
             datetimeField.toString(),
             smallDateTimeField.toString(),
+            dateTimeOffsetField,
+            timeField
+        )
+    }
+
+    override fun toObjectRow(): List<Any?> {
+        return listOf(
+            boolField,
+            smallintField,
+            intField,
+            bigintField,
+            realField,
+            doubleField,
+            textField,
+            numericField,
+            dateField,
+            datetimeField,
+            smallDateTimeField.bulkCopyString(),
             dateTimeOffsetField,
             timeField
         )
