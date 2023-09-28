@@ -143,7 +143,7 @@ private value class SqlArray(private val array: Array) : Encode {
  * [java.sql.PreparedStatement] parameter binding. If [input] is already a value that implements
  * [Encode] the value is returned without wrapping.
  */
-fun toEncodable(input: Any?): Encode = when (input) {
+fun toEncode(input: Any?): Encode = when (input) {
     is Encode -> input
     is Boolean -> SqlBoolean(input)
     is Byte -> SqlByte(input)

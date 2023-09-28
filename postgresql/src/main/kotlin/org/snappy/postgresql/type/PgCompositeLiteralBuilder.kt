@@ -16,7 +16,7 @@ import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.time.OffsetTime
 
-class PgCompositeLiteralBuilder() {
+class PgCompositeLiteralBuilder {
     private val stringBuilder = StringBuilder().apply {
         append('(')
     }
