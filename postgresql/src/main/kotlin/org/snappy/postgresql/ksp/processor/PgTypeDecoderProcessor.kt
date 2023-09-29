@@ -41,6 +41,13 @@ class PgTypeDecoderProcessor(
             classDeclaration.primaryConstructor!!.accept(this, data)
         }
 
+        private fun addImport(import: String) {
+            if (import.startsWith("kotlin.")) return
+            imports += import
+        }
+
+        private val importsSorted: List<String> get() = imports.sorted()
+
         private fun createVariableDeclarationFromParameter(
             parameter: KSValueParameter,
         ): String {
@@ -51,10 +58,10 @@ class PgTypeDecoderProcessor(
             val parameterTypeDeclaration = parameterType.declaration
             val packageName = parameterTypeDeclaration.packageName.asString()
             val simpleName = parameterTypeDeclaration.simpleName.asString()
-            imports += "$packageName.$simpleName"
 
             val readType = when {
                 parameterTypeDeclaration.hasAnnotation<PgType>() -> {
+                    addImport("$packageName.$simpleName")
                     "Composite<$simpleName>"
                 }
                 simpleName == "Array" || simpleName == "List" -> {
@@ -65,7 +72,7 @@ class PgTypeDecoderProcessor(
                         .declaration
                     val collectionTypeSimpleName = collectionType.simpleName.asString()
                     val collectionTypePackage = collectionType.packageName.asString()
-                    imports += "$collectionTypePackage.$collectionTypeSimpleName"
+                    addImport("$collectionTypePackage.$collectionTypeSimpleName")
                     "$simpleName<$collectionTypeSimpleName>"
                 }
                 simpleName in validReadTypes -> simpleName
@@ -111,10 +118,10 @@ class PgTypeDecoderProcessor(
                 fileName = decoderName,
             )
 
-            imports += "$classPackage.$className"
-            imports += "org.snappy.postgresql.type.parseComposite"
+            addImport("$classPackage.$className")
+            addImport("org.snappy.postgresql.literal.parseComposite")
             val parserBody = getCompositeLiteralParser(classDeclaration, constructorFunction)
-            val importsOrdered = imports.sorted().joinToString(
+            val importsOrdered = importsSorted.joinToString(
                 separator = "\n                ",
             ) {
                 "import $it"
@@ -149,9 +156,9 @@ class PgTypeDecoderProcessor(
                 fileName = decoderName,
             )
 
-            imports += "$classPackage.$className"
-            imports += "org.snappy.decodeError"
-            val importsOrdered = imports.sorted().joinToString(
+            addImport("$classPackage.$className")
+            addImport("org.snappy.decodeError")
+            val importsOrdered = importsSorted.joinToString(
                 separator = "\n                ",
             ) {
                 "import $it"

@@ -4,8 +4,7 @@ import org.postgresql.util.PGobject
 import org.snappy.postgresql.type.PgObjectDecoder
 import org.snappy.postgresql.type.PgType
 import org.snappy.postgresql.type.ToPgObject
-import org.snappy.postgresql.type.parseComposite
-import kotlin.reflect.KClass
+import org.snappy.postgresql.literal.parseComposite
 
 @PgType("complex_composite_test")
 data class ComplexCompositeTest(

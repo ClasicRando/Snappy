@@ -1,11 +1,11 @@
-package org.snappy.postgresql.type
+package org.snappy.postgresql.literal
 
 import org.snappy.postgresql.instantFormatter
-import org.snappy.postgresql.literal.toPgArrayLiteral
 import org.snappy.postgresql.localDateFormatter
 import org.snappy.postgresql.localDateTimeFormatter
 import org.snappy.postgresql.localTimeFormatter
 import org.snappy.postgresql.offsetTimeFormatter
+import org.snappy.postgresql.type.ToPgObject
 import java.math.BigDecimal
 import java.sql.Date
 import java.sql.Time

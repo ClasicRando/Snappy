@@ -24,7 +24,7 @@ class PgTypeEncoderProcessor(
 ) : SymbolProcessor {
     private val imports = mutableSetOf(
         "org.snappy.postgresql.type.ToPgObject",
-        "org.snappy.postgresql.type.PgCompositeLiteralBuilder",
+        "org.snappy.postgresql.literal.PgCompositeLiteralBuilder",
         "org.postgresql.util.PGobject",
     )
     private var hasRun = false
