@@ -50,7 +50,7 @@ class PgCompositeLiteralParser internal constructor(value: String) : AbstractLit
     }
 
     fun <C : Any> readComposite(decoder: PgObjectDecoder<C>): C? {
-        return tryParseNextBuffer("Composite for ${decoder.typeName}") {
+        return tryParseNextBuffer("Composite") {
             decoder.decodePgObject(PGobject().apply { value = it })
         }
     }

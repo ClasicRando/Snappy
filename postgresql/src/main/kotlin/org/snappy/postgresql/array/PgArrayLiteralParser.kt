@@ -75,7 +75,7 @@ class PgArrayLiteralParser<T : Any> @PublishedApi internal constructor(
                     val type = elementClass.createType(nullable = false)
                     val decoder = SnappyMapper.decoderCache.getOrNull(type) as? PgObjectDecoder
                         ?: throw MissingParseType(elementClass)
-                    val element = tryParseNextBuffer(decoder.typeName) {
+                    val element = tryParseNextBuffer(elementClass.simpleName ?: "") {
                         decoder.decodePgObject(PGobject().apply { value = it })
                     }
                     add(elementClass.cast(element))

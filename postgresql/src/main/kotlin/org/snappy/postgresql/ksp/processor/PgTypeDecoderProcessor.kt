@@ -5,6 +5,7 @@ import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
+import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
@@ -13,7 +14,6 @@ import com.google.devtools.ksp.symbol.KSVisitorVoid
 import com.google.devtools.ksp.validate
 import org.snappy.ksp.appendText
 import org.snappy.ksp.hasAnnotation
-import org.snappy.ksp.isInstance
 import org.snappy.postgresql.type.PgType
 
 class PgTypeDecoderProcessor(
@@ -34,10 +34,9 @@ class PgTypeDecoderProcessor(
     inner class CompositeVisitor : KSVisitorVoid() {
         private val imports = mutableSetOf(
             "org.snappy.postgresql.type.PgObjectDecoder",
-            "org.snappy.postgresql.type.parseComposite",
-            "kotlin.reflect.KClass",
             "org.postgresql.util.PGobject",
         )
+
         override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
             classDeclaration.primaryConstructor!!.accept(this, data)
         }
@@ -55,7 +54,20 @@ class PgTypeDecoderProcessor(
             imports += "$packageName.$simpleName"
 
             val readType = when {
-                parameterTypeDeclaration.hasAnnotation<PgType>() -> "Composite"
+                parameterTypeDeclaration.hasAnnotation<PgType>() -> {
+                    "Composite<$simpleName>"
+                }
+                simpleName == "Array" || simpleName == "List" -> {
+                    val collectionType = parameterType.arguments
+                        .first()
+                        .type!!
+                        .resolve()
+                        .declaration
+                    val collectionTypeSimpleName = collectionType.simpleName.asString()
+                    val collectionTypePackage = collectionType.packageName.asString()
+                    imports += "$collectionTypePackage.$collectionTypeSimpleName"
+                    "$simpleName<$collectionTypeSimpleName>"
+                }
                 simpleName in validReadTypes -> simpleName
                 else -> error("Field $name is not able to be parsed from a composite literal")
             }
@@ -86,18 +98,13 @@ class PgTypeDecoderProcessor(
             return "$variables$returnExpression"
         }
 
-        private fun createDecoderFile(
+        private fun createCompositeDecoderFile(
             constructorFunction: KSFunctionDeclaration,
             classDeclaration: KSClassDeclaration,
         ) {
             val classPackage = classDeclaration.packageName.asString()
             val className = classDeclaration.simpleName.asString()
             val decoderName = "${className}Decoder"
-            val annotationValue = classDeclaration.annotations
-                .first { it.isInstance<PgType>() }
-                .arguments[0]
-                .value as String
-            val typeName = annotationValue.replace("\"", "\"\"")
             val file = codeGenerator.createNewFile(
                 dependencies = Dependencies(true, constructorFunction.containingFile!!),
                 packageName = DESTINATION_PACKAGE,
@@ -105,6 +112,8 @@ class PgTypeDecoderProcessor(
             )
 
             imports += "$classPackage.$className"
+            imports += "org.snappy.postgresql.type.parseComposite"
+            val parserBody = getCompositeLiteralParser(classDeclaration, constructorFunction)
             val importsOrdered = imports.sorted().joinToString(
                 separator = "\n                ",
             ) {
@@ -117,12 +126,48 @@ class PgTypeDecoderProcessor(
                 $importsOrdered
                 
                 class $decoderName : PgObjectDecoder<$className> {
-                    override val typeName: String = "$typeName"
-                    override val decodeClass: KClass<$className> = $className::class;
-                    
                     override fun decodePgObject(pgObject: PGobject): $className? {
                         return parseComposite(pgObject) {
-                            ${getCompositeLiteralParser(classDeclaration, constructorFunction)}
+                            $parserBody
+                        }
+                    }
+                }
+                
+            """.trimIndent())
+        }
+
+        private fun createEnumDecoderFile(
+            constructorFunction: KSFunctionDeclaration,
+            classDeclaration: KSClassDeclaration,
+        ) {
+            val classPackage = classDeclaration.packageName.asString()
+            val className = classDeclaration.simpleName.asString()
+            val decoderName = "${className}Decoder"
+            val file = codeGenerator.createNewFile(
+                dependencies = Dependencies(true, constructorFunction.containingFile!!),
+                packageName = DESTINATION_PACKAGE,
+                fileName = decoderName,
+            )
+
+            imports += "$classPackage.$className"
+            imports += "org.snappy.decodeError"
+            val importsOrdered = imports.sorted().joinToString(
+                separator = "\n                ",
+            ) {
+                "import $it"
+            }
+            file.appendText("""
+                @file:Suppress("UNUSED")
+                package $DESTINATION_PACKAGE
+                
+                $importsOrdered
+                
+                class $decoderName : PgObjectDecoder<$className> {
+                    override fun decodePgObject(pgObject: PGobject): $className? {
+                        return pgObject.value?.let { value ->
+                            enumValues<$className>().find {
+                                value.lowercase() == it.name.lowercase()
+                            } ?: decodeError<$className>(pgObject.value)
                         }
                     }
                 }
@@ -135,7 +180,12 @@ class PgTypeDecoderProcessor(
             if (classDeclaration.typeParameters.any()) {
                 error("Generic PgType classes are not supported")
             }
-            createDecoderFile(function, classDeclaration)
+            if (classDeclaration.classKind == ClassKind.ENUM_CLASS) {
+                createEnumDecoderFile(function, classDeclaration)
+                logger.info("Created decoder file for ${classDeclaration.simpleName.asString()}")
+                return
+            }
+            createCompositeDecoderFile(function, classDeclaration)
             logger.info("Created decoder file for ${classDeclaration.simpleName.asString()}")
         }
     }
@@ -157,25 +207,6 @@ class PgTypeDecoderProcessor(
             "OffsetTime",
             "OffsetDateTime",
             "Instant",
-            "List",
-            "Array",
-        )
-        val validAppendTypes = listOf(
-            "Boolean",
-            "Short",
-            "Int",
-            "Long",
-            "Float",
-            "Double",
-            "BigDecimal",
-            "String",
-            "LocalDate",
-            "LocalTime",
-            "LocalDateTime",
-            "OffsetTime",
-            "OffsetDateTime",
-            "Instant",
-            "Array",
         )
     }
 }

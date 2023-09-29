@@ -69,9 +69,6 @@ data class SimpleCompositeTest(
             OffsetTime.now(),
         )
 
-        override val typeName: String = "simple_composite_test"
-        override val decodeClass: KClass<SimpleCompositeTest> = SimpleCompositeTest::class
-
         override fun decodePgObject(pgObject: PGobject): SimpleCompositeTest? {
             return parseComposite(pgObject) {
                 val boolField = readBoolean() ?: error("bool field cannot be null")

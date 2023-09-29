@@ -20,10 +20,6 @@ data class ComplexCompositeTest(
     }
 
     companion object : PgObjectDecoder<ComplexCompositeTest> {
-
-        override val typeName: String = "complex_composite_test"
-        override val decodeClass: KClass<ComplexCompositeTest> = ComplexCompositeTest::class
-
         override fun decodePgObject(pgObject: PGobject): ComplexCompositeTest? {
             return parseComposite(pgObject) {
                 val textField = readString() ?: error("string field cannot be null")
