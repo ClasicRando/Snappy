@@ -1,6 +1,7 @@
 package org.snappy.postgresql.type
 
 import org.snappy.postgresql.instantFormatter
+import org.snappy.postgresql.literal.toPgArrayLiteral
 import org.snappy.postgresql.localDateFormatter
 import org.snappy.postgresql.localDateTimeFormatter
 import org.snappy.postgresql.localTimeFormatter
@@ -19,11 +20,6 @@ import java.time.OffsetTime
 class PgCompositeLiteralBuilder {
     private val stringBuilder = StringBuilder().apply {
         append('(')
-    }
-
-    /** Returns a new string with the required control characters for arrays escaped */
-    private fun replaceInArray(value: String?): String? {
-        return value?.replace("\\", "\\\\")?.replace("\"", "\\\"")
     }
 
     /** Returns a new string with the required control characters for composites escaped */
@@ -56,30 +52,7 @@ class PgCompositeLiteralBuilder {
         iterable?.let { iter ->
             stringBuilder.apply {
                 append('"')
-                val isComposite = iter.firstOrNull { it != null }
-                    ?.let { it is ToPgObject }
-                    ?: false
-                val arrayString = iter.joinToString(
-                    separator = if (isComposite) "\",\"" else ",",
-                    prefix = if (isComposite) "{\"" else "{",
-                    postfix = if (isComposite) "\"}" else "}",
-                ) { item ->
-                    if (item == null) {
-                        return@joinToString ""
-                    }
-                    val element = when (item) {
-                        is ToPgObject -> item.toPgObject().value ?: ""
-                        is Time -> localTimeFormatter.format(item.toLocalTime())
-                        is Date -> localDateFormatter.format(item.toLocalDate())
-                        is Timestamp -> "\"${instantFormatter.format(item.toInstant())}\""
-                        is LocalTime -> localTimeFormatter.format(item)
-                        is LocalDate -> localDateFormatter.format(item)
-                        is LocalDateTime -> "\"${localDateTimeFormatter.format(item)}\""
-                        is Instant -> "\"${instantFormatter.format(item)}\""
-                        else -> item.toString()
-                    }
-                    replaceInArray(element) ?: ""
-                }
+                val arrayString = iter.toPgArrayLiteral()
                 append(replaceInComposite(arrayString))
                 append('"')
             }

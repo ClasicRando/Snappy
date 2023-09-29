@@ -1,7 +1,8 @@
 package org.snappy.postgresql.array
 
-import org.postgresql.PGConnection
+import org.postgresql.util.PGobject
 import org.snappy.encode.Encode
+import org.snappy.postgresql.literal.toPgArrayLiteral
 import org.snappy.postgresql.type.PgType
 import org.snappy.postgresql.type.ToPgObject
 import java.math.BigDecimal
@@ -15,7 +16,6 @@ import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.time.OffsetTime
 import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.jvm.jvmName
 
 fun BooleanArray.toPgArray(): Encode {
@@ -60,48 +60,40 @@ fun ByteArray.toPgArray(): Encode {
     }
 }
 
-inline fun <reified T> Collection<T>.toPgArray(connection: PGConnection): Encode {
-    return this.toTypedArray().toPgArray(connection)
+inline fun <reified T> Collection<T>.toPgArray(): Encode {
+    return this.toTypedArray().toPgArray()
 }
 
-inline fun <reified T> Array<T>.toPgArray(connection: PGConnection): Encode {
+inline fun <reified T> Array<T>.toPgArray(): Encode {
     val typeName = when (val listClass = T::class) {
-        Boolean::class -> "bool"
-        Short::class -> "smallint"
-        Int::class -> "int"
-        Long::class -> "bigint"
-        Float::class -> "float4"
-        Double::class -> "float8"
-        Byte::class -> "bytea"
-        String::class -> "text"
-        BigDecimal::class -> "numeric"
-        Date::class -> "date"
-        Timestamp::class -> "timestamp"
-        Time::class -> "time"
-        LocalTime::class -> "time"
-        OffsetTime::class -> "timetz"
-        LocalDate::class -> "date"
-        LocalDateTime::class -> "timestamp"
-        OffsetDateTime::class -> "timestamptz"
-        Instant::class -> "timestamptz"
+        Boolean::class -> "_bool"
+        Short::class -> "_int2"
+        Int::class -> "_int4"
+        Long::class -> "_int8"
+        Float::class -> "_float4"
+        Double::class -> "_float8"
+        Byte::class -> "_bytea"
+        String::class -> "_text"
+        BigDecimal::class -> "_numeric"
+        Date::class -> "_date"
+        Timestamp::class -> "_timestamp"
+        Time::class -> "_time"
+        LocalTime::class -> "_time"
+        OffsetTime::class -> "_timetz"
+        LocalDate::class -> "_date"
+        LocalDateTime::class -> "_timestamp"
+        OffsetDateTime::class -> "_timestamptz"
+        Instant::class -> "_timestamptz"
         else -> {
-            if (!listClass.isSubclassOf(ToPgObject::class)) {
-                throw CannotEncodeArray(listClass)
-            }
             val typeName = listClass.findAnnotation<PgType>()?.name
                 ?: listClass.simpleName
                 ?: listClass.jvmName
-            val objectCollection = Array(this.size) {
-                (this[it] as ToPgObject).toPgObject()
-            }
-            val array = connection.createArrayOf(typeName, objectCollection)
-            return Encode { preparedStatement, parameterIndex ->
-                preparedStatement.setArray(parameterIndex, array)
-            }
+            "_$typeName"
         }
     }
-    val array = connection.createArrayOf(typeName, this)
-    return Encode { preparedStatement, parameterIndex ->
-        preparedStatement.setArray(parameterIndex, array)
+    val pgObject = PGobject().apply {
+        value = this@toPgArray.toPgArrayLiteral()
+        type = typeName
     }
+    return ToPgObject { pgObject }
 }

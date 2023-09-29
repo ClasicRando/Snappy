@@ -3,8 +3,6 @@ package org.snappy.postgresql
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-/** Control characters found within postgresql literals. Need to be escaped/handled in encoding */
-private val controlChars: Set<Char> = setOf('{', '}', '(', ')', '\\', '"')
 /** [java.time.LocalTime] pattern for encoding date values into postgresql */
 private const val LOCAL_TIME_PATTERN: String = "HH:mm:ss"
 /** Formatter for the [java.time.LocalTime] pattern */

@@ -5,18 +5,17 @@ import io.mockk.mockk
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
-import org.postgresql.PGConnection
 import org.postgresql.jdbc.PgConnection
+import org.postgresql.util.PGobject
+import org.postgresql.util.PSQLException
 import org.snappy.DecodeError
 import org.snappy.decode.Decoder
 import org.snappy.execute.execute
 import org.snappy.postgresql.data.SimpleCompositeTest
 import java.lang.IllegalStateException
 import java.math.BigDecimal
-import java.sql.Connection
 import java.sql.Date
 import java.sql.DriverManager
-import java.sql.SQLException
 import java.sql.Timestamp
 import java.time.Instant
 import java.time.LocalDate
@@ -39,6 +38,19 @@ class ArrayUtilsTest {
         val connectionString = System.getenv("SNAPPY_PG_CONNECTION_STRING")
             ?: throw IllegalStateException(missingEnvironmentVariableMessage)
         DriverManager.getConnection(connectionString).unwrap(PgConnection::class.java).use(action)
+    }
+
+    @Test
+    fun test() {
+        assertDoesNotThrow {
+            useConnection {
+                val array = PGobject().apply {
+                    type = "_float4"
+                    value = "{0.45,5.69}"
+                }
+                it.execute("select ?", listOf(array))
+            }
+        }
     }
 
     @Test
@@ -162,10 +174,9 @@ class ArrayUtilsTest {
 
     @Test
     fun `Array toPgArray should fail when unknown type`() {
-
-        assertThrows<CannotEncodeArray> {
+        assertThrows<PSQLException> {
             useConnection {
-                val array = arrayOf<Decoder<String>>().toPgArray(it)
+                val array = arrayOf<Decoder<String>>().toPgArray()
                 it.execute("select ?::int[]", listOf(array))
             }
         }
@@ -175,7 +186,7 @@ class ArrayUtilsTest {
     fun `Array toPgArray should succeed when boolean`() {
         assertDoesNotThrow {
             useConnection {
-                val array = arrayOf(true, false).toPgArray(it)
+                val array = arrayOf(true, false).toPgArray()
                 it.execute("select ?::bool[]", listOf(array))
             }
         }
@@ -185,7 +196,7 @@ class ArrayUtilsTest {
     fun `Array toPgArray should succeed when short`() {
         assertDoesNotThrow {
             useConnection {
-                val array = arrayOf<Short>(1, 6).toPgArray(it)
+                val array = arrayOf<Short>(1, 6).toPgArray()
                 it.execute("select ?::smallint[]", listOf(array))
             }
         }
@@ -195,7 +206,7 @@ class ArrayUtilsTest {
     fun `Array toPgArray should succeed when int`() {
         assertDoesNotThrow {
             useConnection {
-                val array = arrayOf(1, 5).toPgArray(it)
+                val array = arrayOf(1, 5).toPgArray()
                 it.execute("select ?::int[]", listOf(array))
             }
         }
@@ -205,7 +216,7 @@ class ArrayUtilsTest {
     fun `Array toPgArray should succeed when long`() {
         assertDoesNotThrow {
             useConnection {
-                val array = arrayOf(55L, 86L).toPgArray(it)
+                val array = arrayOf(55L, 86L).toPgArray()
                 it.execute("select ?::bigint[]", listOf(array))
             }
         }
@@ -215,7 +226,7 @@ class ArrayUtilsTest {
     fun `Array toPgArray should succeed when float`() {
         assertDoesNotThrow {
             useConnection {
-                val array = arrayOf(4F, 89F).toPgArray(it)
+                val array = arrayOf(4F, 89F).toPgArray()
                 it.execute("select ?::real[]", listOf(array))
             }
         }
@@ -225,7 +236,7 @@ class ArrayUtilsTest {
     fun `Array toPgArray should succeed when double`() {
         assertDoesNotThrow {
             useConnection {
-                val array = arrayOf(4.256, 8.653).toPgArray(it)
+                val array = arrayOf(4.256, 8.653).toPgArray()
                 it.execute("select ?::double precision[]", listOf(array))
             }
         }
@@ -235,7 +246,7 @@ class ArrayUtilsTest {
     fun `Array toPgArray should succeed when byte`() {
         assertDoesNotThrow {
             useConnection {
-                val array = arrayOf<Byte>(0x56, 0x78).toPgArray(it)
+                val array = arrayOf<Byte>(0x56, 0x78).toPgArray()
                 it.execute("select ?::bytea[]", listOf(array))
             }
         }
@@ -245,7 +256,7 @@ class ArrayUtilsTest {
     fun `Array toPgArray should succeed when string`() {
         assertDoesNotThrow {
             useConnection {
-                val array = arrayOf("Test", "Test").toPgArray(it)
+                val array = arrayOf("Test", "Test").toPgArray()
                 it.execute("select ?::text[]", listOf(array))
             }
         }
@@ -255,7 +266,7 @@ class ArrayUtilsTest {
     fun `Array toPgArray should succeed when big decimal`() {
         assertDoesNotThrow {
             useConnection {
-                val array = arrayOf(BigDecimal("58.42"), BigDecimal("549")).toPgArray(it)
+                val array = arrayOf(BigDecimal("58.42"), BigDecimal("549")).toPgArray()
                 it.execute("select ?::numeric[]", listOf(array))
             }
         }
@@ -268,7 +279,7 @@ class ArrayUtilsTest {
                 val array = arrayOf(
                     Date.valueOf(LocalDate.of(2023, 1, 1)),
                     Date.valueOf(LocalDate.of(2023, 5, 1)),
-                ).toPgArray(it)
+                ).toPgArray()
                 it.execute("select ?::date[]", listOf(array))
             }
         }
@@ -278,7 +289,7 @@ class ArrayUtilsTest {
     fun `Array toPgArray should succeed when sql timestamp`() {
         assertDoesNotThrow {
             useConnection {
-                val array = arrayOf(Timestamp.from(Instant.now())).toPgArray(it)
+                val array = arrayOf(Timestamp.from(Instant.now())).toPgArray()
                 it.execute("select ?::timestamp[]", listOf(array))
             }
         }
@@ -288,7 +299,7 @@ class ArrayUtilsTest {
     fun `Array toPgArray should succeed when local time`() {
         assertDoesNotThrow {
             useConnection {
-                val array = arrayOf(LocalTime.now()).toPgArray(it)
+                val array = arrayOf(LocalTime.now()).toPgArray()
                 it.execute("select ?::time[]", listOf(array))
             }
         }
@@ -298,7 +309,7 @@ class ArrayUtilsTest {
     fun `Array toPgArray should succeed when offset time`() {
         assertDoesNotThrow {
             useConnection {
-                val array = arrayOf(OffsetTime.now()).toPgArray(it)
+                val array = arrayOf(OffsetTime.now()).toPgArray()
                 it.execute("select ?::timetz[]", listOf(array))
             }
         }
@@ -308,7 +319,7 @@ class ArrayUtilsTest {
     fun `Array toPgArray should succeed when local date`() {
         assertDoesNotThrow {
             useConnection {
-                val array = arrayOf(LocalDate.now()).toPgArray(it)
+                val array = arrayOf(LocalDate.now()).toPgArray()
                 it.execute("select ?::date[]", listOf(array))
             }
         }
@@ -318,7 +329,7 @@ class ArrayUtilsTest {
     fun `Array toPgArray should succeed when local date time`() {
         assertDoesNotThrow {
             useConnection {
-                val array = arrayOf(LocalDateTime.now()).toPgArray(it)
+                val array = arrayOf(LocalDateTime.now()).toPgArray()
                 it.execute("select ?::timestamp[]", listOf(array))
             }
         }
@@ -328,7 +339,7 @@ class ArrayUtilsTest {
     fun `Array toPgArray should succeed when offset date time`() {
         assertDoesNotThrow {
             useConnection {
-                val array = arrayOf(OffsetDateTime.now()).toPgArray(it)
+                val array = arrayOf(OffsetDateTime.now()).toPgArray()
                 it.execute("select ?::timestamptz[]", listOf(array))
             }
         }
@@ -338,7 +349,7 @@ class ArrayUtilsTest {
     fun `Array toPgArray should succeed when instant`() {
         assertDoesNotThrow {
             useConnection {
-                val array = arrayOf(Instant.now()).toPgArray(it)
+                val array = arrayOf(Instant.now()).toPgArray()
                 it.execute("select ?::timestamptz[]", listOf(array))
             }
         }
@@ -348,7 +359,7 @@ class ArrayUtilsTest {
     fun `Array toPgArray should succeed when class convertible to PGobject`() {
         assertDoesNotThrow {
             useConnection {
-                val array = arrayOf(SimpleCompositeTest.default).toPgArray(it)
+                val array = arrayOf(SimpleCompositeTest.default).toPgArray()
                 it.execute("select ?::simple_composite_test[]", listOf(array))
             }
         }
