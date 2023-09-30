@@ -4,8 +4,7 @@ import org.postgresql.util.PGobject
 import org.snappy.postgresql.type.PgObjectDecoder
 import org.snappy.postgresql.type.PgType
 import org.snappy.postgresql.type.ToPgObject
-import org.snappy.postgresql.type.parseComposite
-import kotlin.reflect.KClass
+import org.snappy.postgresql.literal.parseComposite
 
 @PgType("complex_composite_test")
 data class ComplexCompositeTest(
@@ -20,10 +19,6 @@ data class ComplexCompositeTest(
     }
 
     companion object : PgObjectDecoder<ComplexCompositeTest> {
-
-        override val typeName: String = "complex_composite_test"
-        override val decodeClass: KClass<ComplexCompositeTest> = ComplexCompositeTest::class
-
         override fun decodePgObject(pgObject: PGobject): ComplexCompositeTest? {
             return parseComposite(pgObject) {
                 val textField = readString() ?: error("string field cannot be null")

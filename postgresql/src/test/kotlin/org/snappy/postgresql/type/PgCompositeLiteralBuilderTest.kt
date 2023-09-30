@@ -5,7 +5,7 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.postgresql.util.PGobject
 import org.snappy.postgresql.data.ComplexCompositeTestResult
 import org.snappy.postgresql.data.SimpleCompositeTestResult
-import org.snappy.query.query
+import org.snappy.postgresql.literal.PgCompositeLiteralBuilder
 import org.snappy.query.queryFirst
 import java.math.BigDecimal
 import java.sql.Connection
@@ -14,7 +14,6 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.test.assertEquals
 
 @EnabledIfEnvironmentVariable(named = "SNAPPY_PG_TEST", matches = "true")
 class PgCompositeLiteralBuilderTest {

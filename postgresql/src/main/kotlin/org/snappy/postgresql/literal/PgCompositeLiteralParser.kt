@@ -1,12 +1,9 @@
-package org.snappy.postgresql.type
+package org.snappy.postgresql.literal
 
 import org.postgresql.util.PGobject
 import org.snappy.SnappyMapper
-import org.snappy.postgresql.array.PgArrayLiteralParser
-import org.snappy.postgresql.literal.AbstractLiteralParser
-import org.snappy.postgresql.literal.ExhaustedBuffer
+import org.snappy.postgresql.type.PgObjectDecoder
 import kotlin.reflect.KClass
-import kotlin.reflect.KType
 
 fun <T : Any> parseComposite(pgObject: PGobject, parsing: PgCompositeLiteralParser.() -> T): T? {
     return pgObject.value?.let {
@@ -50,7 +47,7 @@ class PgCompositeLiteralParser internal constructor(value: String) : AbstractLit
     }
 
     fun <C : Any> readComposite(decoder: PgObjectDecoder<C>): C? {
-        return tryParseNextBuffer("Composite for ${decoder.typeName}") {
+        return tryParseNextBuffer("Composite") {
             decoder.decodePgObject(PGobject().apply { value = it })
         }
     }

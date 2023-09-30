@@ -1,10 +1,7 @@
-package org.snappy.postgresql.array
+package org.snappy.postgresql.literal
 
 import org.postgresql.util.PGobject
 import org.snappy.SnappyMapper
-import org.snappy.postgresql.literal.AbstractLiteralParser
-import org.snappy.postgresql.literal.ExhaustedBuffer
-import org.snappy.postgresql.literal.MissingParseType
 import org.snappy.postgresql.type.PgObjectDecoder
 import java.math.BigDecimal
 import java.time.Instant
@@ -16,7 +13,6 @@ import java.time.OffsetTime
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 import kotlin.reflect.full.createType
-import kotlin.reflect.full.isSubclassOf
 
 class PgArrayLiteralParser<T : Any> @PublishedApi internal constructor(
     literal: String,
@@ -75,7 +71,7 @@ class PgArrayLiteralParser<T : Any> @PublishedApi internal constructor(
                     val type = elementClass.createType(nullable = false)
                     val decoder = SnappyMapper.decoderCache.getOrNull(type) as? PgObjectDecoder
                         ?: throw MissingParseType(elementClass)
-                    val element = tryParseNextBuffer(decoder.typeName) {
+                    val element = tryParseNextBuffer(elementClass.simpleName ?: "") {
                         decoder.decodePgObject(PGobject().apply { value = it })
                     }
                     add(elementClass.cast(element))

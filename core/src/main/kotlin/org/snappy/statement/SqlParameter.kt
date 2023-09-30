@@ -1,7 +1,7 @@
 package org.snappy.statement
 
 import org.snappy.encode.Encode
-import org.snappy.encode.toEncodable
+import org.snappy.encode.toEncode
 
 /**
  * Variants of SQL parameter types.
@@ -21,7 +21,7 @@ sealed interface SqlParameter {
      * might fail at runtime since the type cannot actually be added to a statement.
      */
     class In(input: Any?): SqlParameter {
-        val value = toEncodable(input)
+        val value = toEncode(input)
     }
     /** Output SQL parameter. Only valid when a stored procedure call */
     class Out(val sqlType: Int): SqlParameter
