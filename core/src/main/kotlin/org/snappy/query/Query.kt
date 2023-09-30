@@ -58,7 +58,7 @@ inline fun <reified T : Any> Connection.query(
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
 ): Sequence<T> {
-    val rowParser = SnappyMapper.rowParserCache.getOrDefault<T>()
+    val rowParser = SnappyMapper.rowParserCache.getOrThrow<T>()
     return queryImpl(this, rowParser, sql, parameters, statementType, timeout)
 }
 

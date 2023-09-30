@@ -29,8 +29,8 @@ object SnappyMapper {
      * load time of queries within the application.
      */
     fun loadCache() {
-        rowParserCache.loadCache()
         decoderCache.loadCache()
+        rowParserCache.loadCache()
     }
 
     fun temp() {

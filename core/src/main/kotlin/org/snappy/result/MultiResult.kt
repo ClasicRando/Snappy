@@ -54,7 +54,7 @@ class MultiResult(private val statement: Statement) : AutoCloseable {
     inline fun <reified T : Any> readNext(): Sequence<T> = sequence {
         moveNextResult()
         checkNotNull(resultSet)
-        val rowParser = SnappyMapper.rowParserCache.getOrDefault<T>()
+        val rowParser = SnappyMapper.rowParserCache.getOrThrow<T>()
         resultSet?.use { rs ->
             val columnNames = rs.columnNames
             while (rs.next()) {
@@ -99,7 +99,7 @@ class MultiResult(private val statement: Statement) : AutoCloseable {
     inline fun <reified T : Any> readNextSingleOrNull(): T? {
         moveNextResult()
         checkNotNull(resultSet)
-        val rowParser = SnappyMapper.rowParserCache.getOrDefault<T>()
+        val rowParser = SnappyMapper.rowParserCache.getOrThrow<T>()
         return resultSet?.use { rs ->
             if (rs.next()) {
                 val row = SnappyRowImpl(rs, rs.columnNames)
@@ -191,7 +191,7 @@ class MultiResult(private val statement: Statement) : AutoCloseable {
     inline fun <reified T : Any> readNextFirstOrNull(): T? {
         moveNextResult()
         checkNotNull(resultSet)
-        val rowParser = SnappyMapper.rowParserCache.getOrDefault<T>()
+        val rowParser = SnappyMapper.rowParserCache.getOrThrow<T>()
         return resultSet?.use { rs ->
             if (rs.next()) {
                 val row = SnappyRowImpl(rs, rs.columnNames)

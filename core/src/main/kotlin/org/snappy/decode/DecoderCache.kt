@@ -16,7 +16,6 @@ import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.withNullability
 import kotlin.reflect.jvm.jvmErasure
 import kotlin.reflect.typeOf
-import kotlin.system.measureTimeMillis
 
 class DecoderCache internal constructor(private val config: SnappyConfig) {
     /** [KLogger][io.github.oshai.kotlinlogging.KLogger] for this cache instance */
@@ -49,27 +48,6 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
         return cache
     }
 
-    internal val defaultDecoder = Decoder { row, fieldName ->
-        row.getAnyNullable(fieldName)
-    }
-
-    /**
-     * Get a [Decoder] for the provided type [rowType]. Checks the [cache] for an existing
-     * parser and returns immediately if it exists. Otherwise, it returns null
-     */
-    @PublishedApi
-    internal fun getOrDefault(rowType: KType): Decoder<*> {
-        return cache[rowType] ?: defaultDecoder
-    }
-
-    /**
-     * Get a [Decoder] for the provided type [T]. Checks the [cache] for an existing
-     * parser and returns immediately if it exists. Otherwise, it returns null
-     */
-    inline fun <reified T : Any> getOrDefault(): Decoder<*> {
-        return getOrDefault(typeOf<T>())
-    }
-
     /**
      * Get a [Decoder] for the provided type [rowType]. Checks the [cache] for an existing
      * parser and returns immediately if it exists. Otherwise, it returns null
@@ -84,17 +62,6 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
      */
     inline fun <reified T : Any> getOrNull(): Decoder<T>? {
         return getOrNull(typeOf<T>()) as Decoder<T>?
-    }
-
-    /** Add or replace an existing parser with a new [parser] for the [rowType] specified */
-    @PublishedApi
-    internal fun <T : Any> insertOrReplace(rowType: KType, parser: Decoder<T>) {
-        cache[rowType.withNullability(false)] = parser
-    }
-
-    /** Add or replace an existing parser with a new [parser] for the [T] specified */
-    inline fun <reified T : Any> insertOrReplace(parser: Decoder<T>) {
-        insertOrReplace(typeOf<T>(), parser)
     }
 
     /**
@@ -114,7 +81,10 @@ class DecoderCache internal constructor(private val config: SnappyConfig) {
      */
     private fun processAllAutoCacheClasses(result: ScanResult) = sequence {
         for (classInfo in result.getClassesImplementing(Decoder::class.java)) {
-            if (classInfo.isAbstract) {
+            if (
+                classInfo.isAbstract ||
+                (classInfo.name.contains("$") && !classInfo.name.contains("Companion"))
+            ) {
                 continue
             }
             val cls = classInfo.loadClass()

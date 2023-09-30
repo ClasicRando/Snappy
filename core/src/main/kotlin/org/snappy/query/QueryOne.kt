@@ -78,7 +78,7 @@ inline fun <reified T : Any> Connection.querySingleOrNull(
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
 ): T? {
-    val rowParser = SnappyMapper.rowParserCache.getOrDefault<T>()
+    val rowParser = SnappyMapper.rowParserCache.getOrThrow<T>()
     return querySingleRowImpl(
         this,
         rowParser,
@@ -187,7 +187,7 @@ inline fun <reified T : Any> Connection.queryFirstOrNull(
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
 ): T? {
-    val rowParser = SnappyMapper.rowParserCache.getOrDefault<T>()
+    val rowParser = SnappyMapper.rowParserCache.getOrThrow<T>()
     return querySingleRowImpl(
         this,
         rowParser,

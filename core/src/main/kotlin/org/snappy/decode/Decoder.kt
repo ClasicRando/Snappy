@@ -11,7 +11,11 @@ import kotlin.reflect.KType
  */
 fun interface Decoder<T : Any> {
     /** Convert a field to the required type [T], given the [fieldName] and [row] */
-    fun decode(row: SnappyRow, fieldName: String): T?
+    fun decode(row: SnappyRow, fieldName: String): T {
+        return decodeNullable(row, fieldName) ?: throw NullSet(fieldName)
+    }
+
+    fun decodeNullable(row: SnappyRow, fieldName: String): T?
 }
 
 /**
@@ -20,14 +24,11 @@ fun interface Decoder<T : Any> {
  */
 internal fun <T : Any> Decoder<T>.decodeWithType(
     valueType: KType,
-    propName: String,
     row: SnappyRow,
-    fieldName: String
+    fieldName: String,
 ): T? {
+    if (valueType.isMarkedNullable) {
+        return decodeNullable(row, fieldName)
+    }
     return decode(row, fieldName)
-        ?: if (valueType.isMarkedNullable) {
-            null
-        } else {
-            throw NullSet(propName)
-        }
 }

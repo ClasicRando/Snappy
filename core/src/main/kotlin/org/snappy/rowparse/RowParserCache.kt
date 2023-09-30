@@ -3,17 +3,13 @@
 package org.snappy.rowparse
 
 import io.github.classgraph.ClassGraph
-import io.github.classgraph.ClassInfo
 import io.github.classgraph.ScanResult
 import org.snappy.NoDefaultConstructor
-import org.snappy.annotations.SnappyCacheRowParser
 import org.snappy.SnappyConfig
-import org.snappy.decode.Decoder
 import org.snappy.logging.logger
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
-import kotlin.reflect.full.companionObject
 import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.isSubclassOf
@@ -31,11 +27,11 @@ class RowParserCache internal constructor(private val config: SnappyConfig) {
     internal var cacheLoaded: Boolean = false
         private set
     /** Map of an output type linked to a [RowParser] */
-    private val rowParserCache: ConcurrentHashMap<KType, RowParser<*>> by lazy { initCache() }
+    private val rowParserCache: HashMap<KType, RowParser<*>> by lazy { initCache() }
 
-    private fun initCache(): ConcurrentHashMap<KType, RowParser<*>> {
+    private fun initCache(): HashMap<KType, RowParser<*>> {
         val start = System.currentTimeMillis()
-        val cache = ConcurrentHashMap<KType, RowParser<*>>()
+        val cache = HashMap<KType, RowParser<*>>()
         val packages = config.packages.toTypedArray()
         ClassGraph().enableAllInfo().acceptPackages(*packages).scan().use { result ->
             for((type, decoder) in processAllAutoCacheClasses(result)) {
@@ -61,10 +57,9 @@ class RowParserCache internal constructor(private val config: SnappyConfig) {
      * required [rowType] and returns that new parser.
      */
     @PublishedApi
-    internal fun <T : Any> getOrDefault(rowType: KType): RowParser<T> {
-        val cachedResult = rowParserCache.getOrPut(rowType) {
-            generateDefaultParser(rowType.jvmErasure)
-        }
+    internal fun <T : Any> getOrThrow(rowType: KType): RowParser<T> {
+        val cachedResult = rowParserCache[rowType]
+            ?: error("No RowParser cached for '$rowType'")
         return cachedResult as RowParser<T>
     }
 
@@ -73,8 +68,8 @@ class RowParserCache internal constructor(private val config: SnappyConfig) {
      * parser and returns immediately if it exists. Otherwise, adds a new default parser for the
      * required [T] and returns that new parser.
      */
-    inline fun <reified T : Any> getOrDefault(): RowParser<T> {
-        return getOrDefault(typeOf<T>())
+    inline fun <reified T : Any> getOrThrow(): RowParser<T> {
+        return getOrThrow(typeOf<T>())
     }
 
     /**
@@ -94,17 +89,6 @@ class RowParserCache internal constructor(private val config: SnappyConfig) {
         return getOrNull(typeOf<T>())
     }
 
-    /** Add or replace an existing parser with a new [parser] for the [rowType] specified */
-    @PublishedApi
-    internal fun <T> insertOrReplace(rowType: KType, parser: RowParser<T>) {
-        rowParserCache[rowType] = parser
-    }
-
-    /** Add or replace an existing parser with a new [parser] for the [T] specified */
-    inline fun <reified T> insertOrReplace(parser: RowParser<T>) {
-        insertOrReplace(typeOf<T>(), parser)
-    }
-
     /**
      * Method to ensure the cache is loaded before continuing. This will force the lazy initialized
      * caches to be loaded immediately in a blocking but thread-safe manner. This reduces the first
@@ -117,16 +101,10 @@ class RowParserCache internal constructor(private val config: SnappyConfig) {
     private val rowParserInterfaceKClass = RowParser::class
 
     /**
-     * Yield pairs of a [KType] and [RowParser] to initialize the cache with classes marked as
-     * [SnappyCacheRowParser]
+     * Yield pairs of a [KType] and [RowParser] to initialize the cache with classes that extend
+     * [RowParser]
      */
     private fun processAllAutoCacheClasses(result: ScanResult) = sequence {
-        for (classInfo in result.getClassesWithAnnotation(SnappyCacheRowParser::class.java)) {
-            if (classInfo.isAbstract) {
-                continue
-            }
-            processClassInfoForCache(classInfo)?.let { yield(it) }
-        }
         for (classInfo in result.getClassesImplementing(RowParser::class.java)) {
             if (classInfo.isAbstract) {
                 continue
@@ -142,30 +120,8 @@ class RowParserCache internal constructor(private val config: SnappyConfig) {
     }
 
     /**
-     * Process a [classInfo] instance annotated with [SnappyCacheRowParser] to insert a [RowParser].
-     * If the class itself is already a [RowParser] or the companion object is a [RowParser] then
-     * null is returned since the second pass of the results will cover those classes.
-     *
-     * @see SnappyCacheRowParser
-     */
-    private fun processClassInfoForCache(classInfo: ClassInfo): Pair<KType, RowParser<*>>? {
-        val kClass = classInfo.loadClass().kotlin
-        if (rowParserInterfaceKClass.isSubclassOf(kClass)) {
-            return null
-        }
-        kClass.companionObject?.let { companion ->
-            if (companion.isSubclassOf(rowParserInterfaceKClass)) {
-                return null
-            }
-        }
-        return kClass.createType() to generateDefaultParser(kClass)
-    }
-
-    /**
      * Process and return a [RowParser] for the specified [kClass], using reflection to get the row
      * type for cache insertion.
-     *
-     * @see SnappyCacheRowParser
      */
     private fun createRowParserClass(kClass: KClass<RowParser<*>>): Pair<KType, RowParser<*>> {
         val valueClassTypeArgument = kClass.supertypes
@@ -187,13 +143,5 @@ class RowParserCache internal constructor(private val config: SnappyConfig) {
         return valueClass.createType(
             arguments = valueClassTypeArgument.arguments
         ) to rowParser
-    }
-
-    /** Create a new default parser for the [rowClass] provided */
-    private fun <T : Any> generateDefaultParser(rowClass: KClass<T>): RowParser<T> {
-        if (rowClass.isData) {
-            return DataClassParser(rowClass)
-        }
-        return DefaultRowParser(rowClass)
     }
 }

@@ -6,6 +6,12 @@ import java.sql.Date
 import java.sql.ResultSet
 import java.sql.Time
 import java.sql.Timestamp
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.OffsetDateTime
+import java.time.OffsetTime
 
 /**
  * Internal representation of a row from a [java.sql.ResultSet] to not expose the result to a user.
@@ -131,6 +137,60 @@ class SnappyRowImpl(
 
     override fun getTimestamp(key: String): Timestamp = resultSet.getTimestamp(key)
         ?: error("Expected not null timestamp value but found null")
+
+    override fun getLocalDate(key: String): LocalDate {
+        return resultSet.getObject(key, LocalDate::class.java)
+            ?: error("Expected not null local date value but found null")
+    }
+
+    override fun getLocalDateNullable(key: String): LocalDate? {
+        return resultSet.getObject(key, LocalDate::class.java)
+    }
+
+    override fun getLocalTime(key: String): LocalTime {
+        return resultSet.getObject(key, LocalTime::class.java)
+            ?: error("Expected not null local time value but found null")
+    }
+
+    override fun getLocalTimeNullable(key: String): LocalTime? {
+        return resultSet.getObject(key, LocalTime::class.java)
+    }
+
+    override fun getLocalDateTime(key: String): LocalDateTime {
+        return resultSet.getObject(key, LocalDateTime::class.java)
+            ?: error("Expected not null local datetime value but found null")
+    }
+
+    override fun getLocalDateTimeNullable(key: String): LocalDateTime? {
+        return resultSet.getObject(key, LocalDateTime::class.java)
+    }
+
+    override fun getOffsetDateTime(key: String): OffsetDateTime {
+        return resultSet.getObject(key, OffsetDateTime::class.java)
+            ?: error("Expected not null offset datetime value but found null")
+    }
+
+    override fun getOffsetDateTimeNullable(key: String): OffsetDateTime? {
+        return resultSet.getObject(key, OffsetDateTime::class.java)
+    }
+
+    override fun getOffsetTime(key: String): OffsetTime {
+        return resultSet.getObject(key, OffsetTime::class.java)
+            ?: error("Expected not null offset time value but found null")
+    }
+
+    override fun getOffsetTimeNullable(key: String): OffsetTime? {
+        return resultSet.getObject(key, OffsetTime::class.java)
+    }
+
+    override fun getInstant(key: String): Instant {
+        return resultSet.getObject(key, Instant::class.java)
+            ?: error("Expected not null instant value but found null")
+    }
+
+    override fun getInstantNullable(key: String): Instant? {
+        return resultSet.getObject(key, Instant::class.java)
+    }
 
     override fun getAnyNullable(key: String): Any? = resultSet.getObject(key)
 
