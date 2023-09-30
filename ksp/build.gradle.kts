@@ -1,7 +1,3 @@
-plugins {
-    kotlin("plugin.serialization")
-}
-
 val kspVersion: String by project
 
 dependencies {
