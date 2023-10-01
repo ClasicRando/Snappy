@@ -1,7 +1,5 @@
 package org.snappy
 
-import org.snappy.rowparse.SnappyRow
-import java.lang.Exception
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.KType

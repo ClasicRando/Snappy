@@ -2,12 +2,12 @@ package org.snappy.query
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.snappy.rowparse.RowParser
 import org.snappy.SnappyMapper
-import org.snappy.statement.StatementType
 import org.snappy.extensions.columnNames
 import org.snappy.extensions.getStatement
+import org.snappy.rowparse.RowParser
 import org.snappy.rowparse.SnappyRowImpl
+import org.snappy.statement.StatementType
 import java.sql.Connection
 
 /**

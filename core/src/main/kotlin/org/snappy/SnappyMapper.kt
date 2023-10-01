@@ -1,6 +1,7 @@
 package org.snappy
 
 import kotlinx.serialization.json.Json
+import org.snappy.SnappyMapper.loadCache
 import org.snappy.cache.DecoderCache
 import org.snappy.cache.RowParserCache
 import java.io.File

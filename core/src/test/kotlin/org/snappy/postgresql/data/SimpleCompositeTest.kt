@@ -2,10 +2,10 @@ package org.snappy.postgresql.data
 
 import org.postgresql.util.PGobject
 import org.snappy.postgresql.literal.PgCompositeLiteralBuilder
+import org.snappy.postgresql.literal.parseComposite
 import org.snappy.postgresql.type.PgObjectDecoder
 import org.snappy.postgresql.type.PgType
 import org.snappy.postgresql.type.ToPgObject
-import org.snappy.postgresql.literal.parseComposite
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime

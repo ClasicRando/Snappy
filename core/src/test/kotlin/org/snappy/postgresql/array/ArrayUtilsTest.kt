@@ -12,7 +12,6 @@ import org.snappy.DecodeError
 import org.snappy.decode.Decoder
 import org.snappy.execute.execute
 import org.snappy.postgresql.data.SimpleCompositeTest
-import java.lang.IllegalStateException
 import java.math.BigDecimal
 import java.sql.Date
 import java.sql.DriverManager

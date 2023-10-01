@@ -5,10 +5,10 @@ import kotlinx.coroutines.withContext
 import org.snappy.EmptyResult
 import org.snappy.SnappyMapper
 import org.snappy.decode.Decoder
-import org.snappy.statement.StatementType
 import org.snappy.extensions.columnNames
 import org.snappy.extensions.getStatement
 import org.snappy.rowparse.SnappyRowImpl
+import org.snappy.statement.StatementType
 import java.sql.Connection
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createType

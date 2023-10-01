@@ -11,7 +11,6 @@ import org.openjdk.jmh.annotations.Setup
 import org.openjdk.jmh.annotations.State
 import org.openjdk.jmh.annotations.Warmup
 import org.snappy.EmptyResult
-import java.sql.Connection
 import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
 

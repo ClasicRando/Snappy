@@ -2,8 +2,8 @@ package org.snappy
 
 import org.junit.jupiter.api.assertThrows
 import org.snappy.data.ResultPair
-import org.snappy.extensions.asTransaction
 import org.snappy.execute.execute
+import org.snappy.extensions.asTransaction
 import org.snappy.query.querySingle
 import org.snappy.query.querySingleOrNull
 import java.io.File

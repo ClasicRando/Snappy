@@ -12,7 +12,6 @@ import org.openjdk.jmh.annotations.State
 import org.openjdk.jmh.annotations.Warmup
 import org.snappy.SnappyMapper
 import org.snappy.query.queryFirst
-import java.sql.Connection
 import java.util.concurrent.TimeUnit
 
 @Warmup(iterations = 4, time = 10, timeUnit = TimeUnit.SECONDS)
