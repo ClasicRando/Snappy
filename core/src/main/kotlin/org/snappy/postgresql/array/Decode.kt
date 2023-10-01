@@ -109,20 +109,6 @@ class BooleanArrayDecoder: Decoder<BooleanArray> {
     }
 }
 
-class ByteArrayDecoder: Decoder<ByteArray> {
-    override fun decodeNullable(row: SnappyRow, fieldName: String): ByteArray? {
-        val value = row.getArray(fieldName)
-        if (value.array == null) {
-            return null
-        }
-        val array = value.array as Array<*>
-        return ByteArray(array.size) { i ->
-            val primitiveValue = array[i] ?: decodeError<Byte>(array[i])
-            primitiveValue as? Byte ?: decodeError<Byte>(primitiveValue)
-        }
-    }
-}
-
 class ShortArrayDecoder: Decoder<ShortArray> {
     override fun decodeNullable(row: SnappyRow, fieldName: String): ShortArray? {
         val value = row.getArray(fieldName)

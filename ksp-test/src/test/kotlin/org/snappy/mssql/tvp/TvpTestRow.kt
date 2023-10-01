@@ -1,6 +1,7 @@
 package org.snappy.mssql.tvp
 
 import org.snappy.copy.ToObjectRow
+import org.snappy.ksp.symbols.ObjectRow
 import org.snappy.ksp.symbols.Rename
 import org.snappy.ksp.symbols.RowParser
 import org.snappy.mssql.DateTime
@@ -20,6 +21,7 @@ import kotlin.random.Random
 
 @TableType("tvp_test")
 @RowParser
+@ObjectRow
 data class TvpTestRow(
     @Rename("bool_field")
     val boolField: Boolean,

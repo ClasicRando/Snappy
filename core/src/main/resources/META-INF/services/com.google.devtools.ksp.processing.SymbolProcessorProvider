@@ -1,4 +1,5 @@
 org.snappy.postgresql.ksp.provider.PgTypeDecoderProcessorProvider
 org.snappy.postgresql.ksp.provider.PgTypeEncoderProcessorProvider
 org.snappy.mssql.ksp.provider.TableTypeProcessorProvider
+org.snappy.ksp.provider.ObjectRowProcessorProvider
 org.snappy.ksp.provider.RowParserProcessorProvider
