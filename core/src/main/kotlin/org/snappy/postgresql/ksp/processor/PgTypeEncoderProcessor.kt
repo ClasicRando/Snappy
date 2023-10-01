@@ -43,7 +43,9 @@ class PgTypeEncoderProcessor(
                 if (hasEncoder) null else annotated
             }
             .toList()
-        processEncodeTypes(encoders)
+        if (encoders.isNotEmpty()) {
+            processEncodeTypes(encoders)
+        }
         hasRun = true
         return emptyList()
     }
