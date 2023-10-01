@@ -3,12 +3,15 @@ package org.snappy.query
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.snappy.EmptyResult
+import org.snappy.SnappyMapper
+import org.snappy.decode.Decoder
 import org.snappy.statement.StatementType
 import org.snappy.extensions.columnNames
 import org.snappy.extensions.getStatement
 import org.snappy.rowparse.SnappyRowImpl
 import java.sql.Connection
 import kotlin.reflect.KClass
+import kotlin.reflect.full.createType
 
 /**
  * Implementation of querying a connection for a single value. Prepares a statement using the
@@ -19,6 +22,7 @@ import kotlin.reflect.KClass
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
  */
+@Suppress("UNCHECKED_CAST")
 @PublishedApi
 internal fun <T : Any> queryScalarImpl(
     connection: Connection,
@@ -32,7 +36,9 @@ internal fun <T : Any> queryScalarImpl(
         preparedStatement.executeQuery().use { rs ->
             if (rs.next()) {
                 val row = SnappyRowImpl(rs, rs.columnNames)
-                row.getObjectNullable(rs.metaData.getColumnName(1), scalarValueClass.java)
+                val decoder = SnappyMapper.decoderCache
+                    .getOrThrow(scalarValueClass.createType(nullable = false)) as Decoder<T>
+                decoder.decodeNullable(row, rs.metaData.getColumnName(1))
             } else {
                 null
             }
