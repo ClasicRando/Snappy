@@ -1,8 +1,8 @@
 package org.snappy.mssql.tvp
 
-import org.snappy.annotations.Rename
+import org.snappy.ksp.symbols.Rename
 import org.snappy.copy.ToObjectRow
-import org.snappy.ksp.RowParser
+import org.snappy.ksp.symbols.RowParser
 import org.snappy.mssql.DateTime
 import org.snappy.mssql.SmallDateTime
 import org.snappy.mssql.toDateTime

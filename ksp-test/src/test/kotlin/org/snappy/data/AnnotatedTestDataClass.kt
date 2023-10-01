@@ -1,7 +1,7 @@
 package org.snappy.data
 
-import org.snappy.annotations.Rename
-import org.snappy.ksp.RowParser
+import org.snappy.ksp.symbols.Rename
+import org.snappy.ksp.symbols.RowParser
 
 @RowParser
 data class AnnotatedTestDataClass(

@@ -14,8 +14,8 @@ import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.KSVisitorVoid
 import com.google.devtools.ksp.symbol.Modifier
 import com.google.devtools.ksp.validate
-import org.snappy.annotations.Rename
-import org.snappy.ksp.RowParser
+import org.snappy.ksp.symbols.Rename
+import org.snappy.ksp.symbols.RowParser
 import org.snappy.ksp.appendText
 
 class RowParserProcessor(

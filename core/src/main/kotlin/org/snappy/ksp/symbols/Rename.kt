@@ -1,4 +1,4 @@
-package org.snappy.annotations
+package org.snappy.ksp.symbols
 
 /**
  * Attach this annotation to properties that have another name in the [java.sql.ResultSet] returned

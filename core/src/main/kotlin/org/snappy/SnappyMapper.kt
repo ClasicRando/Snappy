@@ -1,8 +1,8 @@
 package org.snappy
 
 import kotlinx.serialization.json.Json
-import org.snappy.decode.DecoderCache
-import org.snappy.rowparse.RowParserCache
+import org.snappy.cache.DecoderCache
+import org.snappy.cache.RowParserCache
 import java.io.File
 
 object SnappyMapper {
@@ -31,10 +31,6 @@ object SnappyMapper {
     fun loadCache() {
         decoderCache.loadCache()
         rowParserCache.loadCache()
-    }
-
-    fun temp() {
-        println(decoderCache.cache.entries.joinToString("\n") { "${it.key} -> ${it.value}" })
     }
 
     init { loadCache() }

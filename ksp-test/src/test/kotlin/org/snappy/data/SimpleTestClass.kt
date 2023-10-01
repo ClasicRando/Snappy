@@ -1,6 +1,6 @@
 package org.snappy.data
 
-import org.snappy.ksp.RowParser
+import org.snappy.ksp.symbols.RowParser
 
 @RowParser
 class SimpleTestClass {
