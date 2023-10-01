@@ -1,9 +1,11 @@
 plugins {
     id("me.champeau.jmh") version ("0.7.1")
+    id("com.google.devtools.ksp")
 }
 
 dependencies {
     implementation(project(":core"))
+    ksp(project(":core"))
     // https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc
     testImplementation("com.microsoft.sqlserver:mssql-jdbc:12.4.1.jre11")
     // https://mvnrepository.com/artifact/org.hibernate.orm/hibernate-core
