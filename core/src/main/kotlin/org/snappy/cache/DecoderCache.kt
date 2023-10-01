@@ -18,7 +18,6 @@ import kotlin.reflect.typeOf
 class DecoderCache internal constructor(
     config: SnappyConfig,
 ): AbstractTypeCache<Decoder<*>>(config) {
-    /** [KLogger][io.github.oshai.kotlinlogging.KLogger] for this cache instance */
     override val log by logger()
 
     /**
@@ -31,10 +30,6 @@ class DecoderCache internal constructor(
 
     override val cacheType = Decoder::class
 
-    /**
-     * Yield pairs of a [KType] and [Decoder] to initialize the cache with classes implementing
-     * [Decoder]
-     */
     override fun processAllAutoCacheClasses(result: ScanResult) = sequence {
         for (classInfo in result.getClassesImplementing(Decoder::class.java)) {
             if (

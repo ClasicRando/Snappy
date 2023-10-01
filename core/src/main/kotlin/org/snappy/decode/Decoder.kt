@@ -2,7 +2,6 @@ package org.snappy.decode
 
 import org.snappy.NullSet
 import org.snappy.rowparse.SnappyRow
-import kotlin.reflect.KType
 
 /**
  * Interface to decode a single value returned when parsing a [SnappyRow] column value into the
@@ -16,19 +15,4 @@ fun interface Decoder<T : Any> {
     }
 
     fun decodeNullable(row: SnappyRow, fieldName: String): T?
-}
-
-/**
- * Decode a field given the type information of target. This allows for a nullable field to be
- * properly assigned
- */
-internal fun <T : Any> Decoder<T>.decodeWithType(
-    valueType: KType,
-    row: SnappyRow,
-    fieldName: String,
-): T? {
-    if (valueType.isMarkedNullable) {
-        return decodeNullable(row, fieldName)
-    }
-    return decode(row, fieldName)
 }

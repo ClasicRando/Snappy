@@ -7,6 +7,17 @@ import org.snappy.SnappyConfig
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
+/**
+ * Base class for cache types. Handles the storage, cache initialization, and basic fetching from
+ * the cache. Implementations must provide the strategy for auto classes to auto-cache as well as
+ * some other properties.
+ *
+ * Caches are readonly after initialization and the initialization is threadsafe using a [lazy]
+ * delegate. Initialization starts by scanning the packages specified in the [config] provided.
+ * The [ScanResult] is then passed to the implementors [processAllAutoCacheClasses] to return a
+ * [Sequence] of [KType] paired to the cache type [C]. Each item from the [Sequence] is then packed
+ * into the [cache].
+ */
 abstract class AbstractTypeCache<C : Any>(private val config: SnappyConfig) {
     abstract val log: KLogger
     internal var cacheLoaded: Boolean = false
