@@ -10,7 +10,16 @@ import org.postgresql.geometric.PGpolygon
 import org.postgresql.util.PGInterval
 import org.postgresql.util.PGmoney
 import org.postgresql.util.PGobject
+import org.snappy.decode.Decoder
 import org.snappy.decodeError
+import org.snappy.rowparse.SnappyRow
+
+/** [Decoder] for field of [PGobject] */
+class PGObjectDecoder : Decoder<PGobject> {
+    override fun decodeNullable(row: SnappyRow, fieldName: String): PGobject? {
+        return row.getObjectNullable(fieldName, PGobject::class.java)
+    }
+}
 
 /** [PgObjectDecoder] for a [PGInterval] */
 class PgIntervalDecoder : PgObjectDecoder<PGInterval> {
