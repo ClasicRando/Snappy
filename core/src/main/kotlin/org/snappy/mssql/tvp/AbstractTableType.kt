@@ -29,7 +29,7 @@ abstract class AbstractTableType<R : ToTvpRow>(private val rows: Iterable<R>) : 
                     check(columns.size == items.size)
                     hasCheckedSize = true
                 }
-                addRow(*row.toTvpRow())
+                addRow(*items)
             }
         }
     }

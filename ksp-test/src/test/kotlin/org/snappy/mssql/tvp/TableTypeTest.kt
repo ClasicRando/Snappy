@@ -2,6 +2,7 @@ package org.snappy.mssql.tvp
 
 import com.microsoft.sqlserver.jdbc.ISQLServerConnection
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
+import org.snappy.mssql.tvp.types.TvpTestRowTableType
 import org.snappy.query.query
 import java.sql.DriverManager
 import kotlin.test.BeforeTest
@@ -45,7 +46,7 @@ class TableTypeTest {
     @Test
     fun `encode table type should succeed for implementation of AbstractTableType`() {
         val rows = (1..10_00).map { TvpTestRow.random() }
-        val testTableType = TvpTest(rows)
+        val testTableType = TvpTestRowTableType(rows)
         useConnection {  c ->
             val result = c.query<TvpTestRow>(
                 "EXEC tvp_test_procedure ?",

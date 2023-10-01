@@ -33,7 +33,6 @@ class RowParserProcessor(
         return result
     }
 
-    private val rowParserKClass = RowParser::class
     private val columnKClass = Rename::class
 
     inner class RowParserVisitor : KSVisitorVoid() {

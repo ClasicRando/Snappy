@@ -5,6 +5,7 @@ import org.snappy.ksp.symbols.Rename
 import org.snappy.ksp.symbols.RowParser
 import org.snappy.mssql.DateTime
 import org.snappy.mssql.SmallDateTime
+import org.snappy.mssql.ksp.symbol.TableType
 import org.snappy.mssql.toDateTime
 import org.snappy.mssql.toSmallDateTime
 import java.math.BigDecimal
@@ -17,6 +18,7 @@ import java.time.ZoneOffset
 import java.util.*
 import kotlin.random.Random
 
+@TableType("tvp_test")
 @RowParser
 data class TvpTestRow(
     @Rename("bool_field")
@@ -45,25 +47,7 @@ data class TvpTestRow(
     val dateTimeOffsetField: microsoft.sql.DateTimeOffset,
     @Rename("time_field")
     val timeField: LocalTime,
-) : ToTvpRow, ToObjectRow {
-    override fun toTvpRow(): Array<Any?> {
-        return arrayOf(
-            boolField,
-            smallintField,
-            intField,
-            bigintField,
-            realField,
-            doubleField,
-            textField,
-            numericField,
-            dateField,
-            datetimeField.toString(),
-            smallDateTimeField.toString(),
-            dateTimeOffsetField,
-            timeField
-        )
-    }
-
+) : ToObjectRow {
     override fun toObjectRow(): List<Any?> {
         return listOf(
             boolField,
