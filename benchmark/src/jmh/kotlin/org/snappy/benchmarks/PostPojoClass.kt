@@ -1,12 +1,14 @@
 package org.snappy.benchmarks
 
-import java.sql.Timestamp
+import org.snappy.ksp.symbols.RowParser
+import java.time.LocalDateTime
 
+@RowParser
 class PostPojoClass {
     var id: Int = 0
     var text: String = ""
-    var creationDate: Timestamp = Timestamp(0)
-    var lastChangeDate: Timestamp = Timestamp(0)
+    var creationDate: LocalDateTime = LocalDateTime.MIN
+    var lastChangeDate: LocalDateTime = LocalDateTime.MIN
     var counter1: Int? = null
     var counter2: Int? = null
     var counter3: Int? = null

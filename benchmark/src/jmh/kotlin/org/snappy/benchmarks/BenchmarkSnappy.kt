@@ -10,6 +10,7 @@ import org.openjdk.jmh.annotations.Scope
 import org.openjdk.jmh.annotations.Setup
 import org.openjdk.jmh.annotations.State
 import org.openjdk.jmh.annotations.Warmup
+import org.snappy.SnappyMapper
 import org.snappy.query.queryFirst
 import java.util.concurrent.TimeUnit
 
@@ -17,27 +18,24 @@ import java.util.concurrent.TimeUnit
 @Measurement(iterations = 20, time = 10, timeUnit = TimeUnit.SECONDS)
 @Fork(2)
 @BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
 open class BenchmarkSnappy : BenchmarkBase() {
     @Setup
     open fun start() {
         setup()
+        SnappyMapper.loadCache()
     }
 
     @Benchmark
     open fun queryDataClass() {
         step()
-        useConnection { connection ->
-            connection.queryFirst<PostDataClass>(query, listOf(id))
-        }
+        connection.queryFirst<PostDataClass>(query, listOf(id))
     }
 
     @Benchmark
     open fun queryPojoClass() {
         step()
-        useConnection { connection ->
-            connection.queryFirst<PostPojoClass>(query, listOf(id))
-        }
+        connection.queryFirst<PostPojoClass>(query, listOf(id))
     }
 }

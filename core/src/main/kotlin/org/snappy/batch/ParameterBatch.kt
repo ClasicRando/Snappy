@@ -1,7 +1,7 @@
 package org.snappy.batch
 
-import org.snappy.statement.SqlParameter
 import org.snappy.extensions.toSqlParameterList
+import org.snappy.statement.SqlParameter
 
 /**
  * Functional interface to allow parsing an object into a batch of parameters passed as part of call

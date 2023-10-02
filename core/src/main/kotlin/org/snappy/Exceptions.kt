@@ -1,11 +1,7 @@
 package org.snappy
 
-import org.snappy.rowparse.SnappyRow
-import java.lang.Exception
 import kotlin.reflect.KClass
-import kotlin.reflect.KProperty
 import kotlin.reflect.KType
-import kotlin.reflect.jvm.jvmErasure
 
 /**
  * Exception thrown when a [SqlParameter.Out][org.snappy.statement.SqlParameter.Out] is used outside
@@ -13,21 +9,6 @@ import kotlin.reflect.jvm.jvmErasure
  */
 class OutParameterOutsideProcedure
     : Throwable("Attempted to use an OUT parameter in a PreparedStatement")
-
-/** Exception thrown when extracting a value from a [SnappyRow] but the type cast fails */
-class WrongFieldType(name: String, typeName: String, value: String) : Throwable(
-    "Failed to extract field '$name'$typeName. Found value $value"
-)
-
-fun wrongFieldType(name: String, typeName: String?, value: Any?): Nothing {
-    throw WrongFieldType(
-        name,
-        if (typeName != null) " as $typeName" else "",
-        "'$value' (${value?.let { it::class.qualifiedName } ?: ""})")
-}
-
-/** Exception thrown when parsing a [SnappyRow] and the key is not found */
-class MissingField(name: String) : Throwable("Could not find field '$name' in row")
 
 /** Exception thrown when a column name in a [java.sql.ResultSet] is null */
 class NullFieldName : Throwable("Found a null column name in a ResultSet")
@@ -45,35 +26,22 @@ class EmptyResult : Throwable("Expected result to contain rows but none were fou
 class NoMoreResults
     : Throwable("Attempted to access more results from a statement that has already been exhausted")
 
+/** Exception thrown when a decoder returns a null value but a non-null value was expected */
 class NullSet(name: String)
     : Throwable("Attempted to set value of a non-null property, '$name', with a null value")
 
-class MismatchSet(prop: KProperty<*>, cls: KClass<*>) : Throwable(
-    "Attempted to call a setter to a field, '${prop.name}', with the wrong value type. " +
-    "Expected ${prop.returnType.jvmErasure.qualifiedName} found ${cls.qualifiedName}"
-)
-
+/**
+ * Exception thrown when a cache class attempts to create a new cache item entry but there is no
+ * default constructor
+ */
 class NoDefaultConstructor(cls: KClass<*>)
     : Throwable("No default constructor available for the class '${cls.qualifiedName}'")
 
-class InvalidDataClassConstructorCall(message: String) : Throwable(message)
-
-internal fun invalidDataClassConstructorCall(
-    parameterNames: List<String>,
-    row: SnappyRow,
-): Nothing {
-    val displayRows = row.entries.joinToString("\n        ") { (key, value) ->
-        "    $key: $value (${value?.let { it::class.qualifiedName}})"
-    }
-    val message = """
-        Attempted to call a data class constructor with invalid parameter types.
-        Parameter Names: ${parameterNames.joinToString()}
-        Row:
-        $displayRows
-    """.trimIndent()
-    throw InvalidDataClassConstructorCall(message)
-}
-
+/**
+ * Exception thrown when a batch sql statement fails. The batch number of sql statement are provided
+ * in the log. NOTE: This will only occur when the caller to a batch sql statement explicitly turns
+ * on checking the batch execution result for failed result flags.
+ */
 class BatchExecutionFailed(sql: String, batchNumber: UInt) : Throwable(
     """
         Batch SQL statement failed
@@ -82,21 +50,28 @@ class BatchExecutionFailed(sql: String, batchNumber: UInt) : Throwable(
     """.trimIndent()
 )
 
+/**
+ * Exception thrown when attempting to decode a value but the underlining value is not of the
+ * required type
+ */
 class DecodeError(decodeClassName: String?, value: Any?, valueType: String?) : Throwable(
     "Failed to decode value of type '$valueType' into '$decodeClassName', Value: $value"
 )
 
+/** Throw a [DecodeError] with the provided [value] and expected type [T] */
 inline fun <reified T> decodeError(value: Any?): Nothing {
     decodeError(T::class, value)
 }
 
+/** Throw a [DecodeError] with the provided [value] and expected type class */
 fun decodeError(decodeClass: KClass<*>, value: Any?): Nothing {
     throw DecodeError(decodeClass.qualifiedName, value, value?.let { it::class.qualifiedName })
 }
 
-class CannotFindDecodeValueType(typeName: String)
-    : Exception("Cannot find decode value type '$typeName'")
-
+/**
+ * Exception thrown when checking a [KType] against a jvm erased class to ensure they have the same
+ * number of generic type arguments. This in theory should never be thrown
+ */
 class TypeArgumentMismatch(kClass: KClass<*>, kType: KType) : Throwable(
     "Decoder type , '$kType' has a different number of type arguments then the erased class $kClass"
 )

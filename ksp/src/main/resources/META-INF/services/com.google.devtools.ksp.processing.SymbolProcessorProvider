@@ -1,2 +1,0 @@
-org.snappy.postgresql.ksp.provider.PgTypeDecoderProcessorProvider
-org.snappy.postgresql.ksp.provider.PgTypeEncoderProcessorProvider

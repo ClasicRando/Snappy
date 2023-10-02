@@ -1,10 +1,19 @@
 package org.snappy
 
 import kotlinx.serialization.json.Json
-import org.snappy.decode.DecoderCache
-import org.snappy.rowparse.RowParserCache
+import org.snappy.SnappyMapper.loadCache
+import org.snappy.cache.DecoderCache
+import org.snappy.cache.RowParserCache
 import java.io.File
 
+/**
+ * Main object storing cached data about an application using snappy. Although it's possible to
+ * allow the caches to be loaded only when needed, it's recommended to call [loadCache] during
+ * application startup to ensure the caches are populated before starting any operations that would
+ * otherwise be blocked by cache initialization. This would be important for any web application
+ * since without an initialized cache, the first request from a user to hit snappy method would be
+ * blocked until the cache is initialized.
+ */
 object SnappyMapper {
 
     private val config: SnappyConfig by lazy {
@@ -19,8 +28,10 @@ object SnappyMapper {
         config
     }
 
+    /** Cache of [org.snappy.rowparse.RowParser] classes available within the application */
     val rowParserCache = RowParserCache(config)
 
+    /** Cache of [org.snappy.decode.Decoder] classes available within the application */
     val decoderCache = DecoderCache(config)
 
     /**
@@ -29,13 +40,7 @@ object SnappyMapper {
      * load time of queries within the application.
      */
     fun loadCache() {
-        rowParserCache.loadCache()
         decoderCache.loadCache()
+        rowParserCache.loadCache()
     }
-
-    fun temp() {
-        println(decoderCache.cache.entries.joinToString("\n") { "${it.key} -> ${it.value}" })
-    }
-
-    init { loadCache() }
 }

@@ -1,7 +1,6 @@
 package org.snappy.benchmarks
 
 import java.sql.Connection
-import java.sql.DriverManager
 
 open class BenchmarkBase {
     protected var id = 0
@@ -14,14 +13,8 @@ open class BenchmarkBase {
         from Posts
         where Id = ?
     """.trimIndent()
-    protected val missingEnvironmentVariableMessage = "To run MultiResultTest the environment " +
-            "variable SNAPPY_MSSQL_CONNECTION_STRING must be available"
 
-    protected inline fun useConnection(action: (Connection) -> Unit) {
-        val connectionString = System.getenv("SNAPPY_MSSQL_CONNECTION_STRING")
-            ?: throw IllegalStateException(missingEnvironmentVariableMessage)
-        DriverManager.getConnection(connectionString).use(action)
-    }
+    val connection: Connection = getConnection()
 
     protected fun step() {
         id++
@@ -59,7 +52,7 @@ open class BenchmarkBase {
             	End
             End
         """.trimIndent()
-        useConnection { connection ->
+        getConnection().use { connection ->
             connection.createStatement().use { statement ->
                 statement.execute(query)
             }

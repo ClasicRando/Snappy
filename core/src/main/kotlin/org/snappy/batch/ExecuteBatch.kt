@@ -3,10 +3,10 @@ package org.snappy.batch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.snappy.BatchExecutionFailed
-import org.snappy.statement.StatementType
 import org.snappy.extensions.chunkedIter
 import org.snappy.extensions.getStatement
 import org.snappy.extensions.setParameter
+import org.snappy.statement.StatementType
 import java.sql.Connection
 
 private const val EXECUTE_FAILED_LONG = java.sql.Statement.EXECUTE_FAILED.toLong()

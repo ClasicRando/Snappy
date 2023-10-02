@@ -9,12 +9,6 @@ package org.snappy.rowparse
  *
  * Default parsers for simple data classes and POJOs are provided cached so implementing this
  * interface means you need custom behaviour when extracting from a SQL query result.
- *
- * When implementing the interface, keep in mind that the [SnappyRow] has convenience methods for
- * extracting row values so accessing the underlining [SnappyRow.data] map should never be done.
- * In most cases, you will only need to perform a simple checked cast against the map's key, which
- * can be done using the [SnappyRow.getAs] function. If you need to extract a boxed object, use the
- * [SnappyRow.get] function to allow for more complex parsing of data into the desired type.
  */
 interface RowParser<T> {
     /**

@@ -2,9 +2,9 @@ package org.snappy.query
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.snappy.extensions.getStatement
 import org.snappy.result.MultiResult
 import org.snappy.statement.StatementType
-import org.snappy.extensions.getStatement
 import java.sql.Connection
 
 /**

@@ -13,6 +13,7 @@ rootProject.name = "snappy"
 
 include(":core")
 include("benchmark")
-include("postgresql")
-include("mssql")
-include("ksp")
+//include("postgresql")
+//include("mssql")
+//include("ksp")
+include("ksp-test")
