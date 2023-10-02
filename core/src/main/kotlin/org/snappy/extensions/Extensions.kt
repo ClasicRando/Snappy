@@ -2,6 +2,7 @@ package org.snappy.extensions
 
 import org.snappy.NullFieldName
 import org.snappy.OutParameterOutsideProcedure
+import org.snappy.command.SqlCommand
 import org.snappy.statement.SqlParameter
 import org.snappy.statement.StatementType
 import java.sql.CallableStatement
@@ -62,26 +63,21 @@ internal fun PreparedStatement.setParameter(parameterIndex: Int, parameter: SqlP
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException statement is null before returning (should never happen)
  */
-internal fun Connection.getStatement(
-    sql: String,
-    parameters: List<Any?>,
-    statementType: StatementType,
-    timeout: UInt?,
-): PreparedStatement {
+internal fun Connection.getStatement(command: SqlCommand): PreparedStatement {
     check(!isClosed) { "Cannot query a closed connection" }
     var statement: PreparedStatement? = null
     try {
-        statement = when (statementType) {
+        statement = when (command.statementType) {
             StatementType.StoredProcedure -> prepareCall(
-                "{call $sql(${"?,".repeat(parameters.size).trim(',')})}"
+                "{call ${command.sql}(${"?,".repeat(command.commandParameters.size).trim(',')})}"
             )
-            StatementType.Text -> prepareStatement(sql)
+            StatementType.Text -> prepareStatement(command.sql)
         }
         statement?.let {
-            timeout?.let {
+            command.timeout?.let {
                 statement.queryTimeout = it.toInt()
             }
-            for ((i, parameter) in parameters.toSqlParameterList().withIndex()) {
+            for ((i, parameter) in command.commandParameters.withIndex()) {
                 statement.setParameter(i + 1, parameter)
             }
         }

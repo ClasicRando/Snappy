@@ -3,48 +3,9 @@ package org.snappy.query
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.snappy.EmptyResult
-import org.snappy.SnappyMapper
-import org.snappy.decode.Decoder
-import org.snappy.extensions.columnNames
-import org.snappy.extensions.getStatement
-import org.snappy.rowparse.SnappyRowImpl
+import org.snappy.command.sqlCommand
 import org.snappy.statement.StatementType
 import java.sql.Connection
-import kotlin.reflect.KClass
-import kotlin.reflect.full.createType
-
-/**
- * Implementation of querying a connection for a single value. Prepares a statement using the
- * provided parameters, reading the result and parsing the first row and first column into the
- * required type [T]. Note, both the statement and result set are closed by default before returning
- * from the function.
- *
- * @exception java.sql.SQLException underlining database operation fails
- * @exception IllegalStateException the connection is closed
- */
-@Suppress("UNCHECKED_CAST")
-@PublishedApi
-internal fun <T : Any> queryScalarImpl(
-    connection: Connection,
-    sql: String,
-    parameters: List<Any>,
-    statementType: StatementType,
-    timeout: UInt?,
-    scalarValueClass: KClass<T>
-): T? {
-    return connection.getStatement(sql, parameters, statementType, timeout).use { preparedStatement ->
-        preparedStatement.executeQuery().use { rs ->
-            if (rs.next()) {
-                val row = SnappyRowImpl(rs, rs.columnNames)
-                val decoder = SnappyMapper.decoderCache
-                    .getOrThrow(scalarValueClass.createType(nullable = false)) as Decoder<T>
-                decoder.decodeNullable(row, rs.metaData.getColumnName(1))
-            } else {
-                null
-            }
-        }
-    }
-}
 
 /**
  * Execute a query against this [Connection], returning the first row and column as the type [T]
@@ -65,9 +26,9 @@ inline fun <reified T : Any> Connection.queryScalarOrNull(
     parameters: List<Any> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
-): T? {
-    return queryScalarImpl(this, sql, parameters, statementType, timeout, T::class)
-}
+): T? = sqlCommand(sql, statementType, timeout)
+    .bindMany(parameters)
+    .queryScalarOrNull(this)
 
 /**
  * Execute a query against this [Connection], returning the first row and column as the type [T]
@@ -91,9 +52,9 @@ suspend inline fun <reified T : Any> Connection.queryScalarOrNullSuspend(
     parameters: List<Any> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
-): T? = withContext(Dispatchers.IO) {
-    queryScalarOrNull(sql, parameters, statementType, timeout)
-}
+): T? = sqlCommand(sql, statementType, timeout)
+    .bindMany(parameters)
+    .queryScalarOrNullSuspend(this)
 
 /**
  * Execute a query against this [Connection], returning the first row and column as the type [T].
@@ -114,10 +75,9 @@ inline fun <reified T : Any> Connection.queryScalar(
     parameters: List<Any> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
-): T {
-    return queryScalarImpl(this, sql, parameters, statementType, timeout, T::class)
-        ?: throw EmptyResult()
-}
+): T = sqlCommand(sql, statementType, timeout)
+    .bindMany(parameters)
+    .queryScalar(this)
 
 /**
  * Execute a query against this [Connection], returning the first row and column as the type [T].
@@ -141,6 +101,6 @@ suspend inline fun <reified T : Any> Connection.queryScalarSuspend(
     parameters: List<Any> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
-): T = withContext(Dispatchers.IO) {
-    queryScalar(sql, parameters, statementType, timeout)
-}
+): T = sqlCommand(sql, statementType, timeout)
+    .bindMany(parameters)
+    .queryScalarSuspend(this)

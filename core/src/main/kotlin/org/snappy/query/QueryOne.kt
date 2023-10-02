@@ -3,59 +3,10 @@ package org.snappy.query
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.snappy.EmptyResult
-import org.snappy.SnappyMapper
 import org.snappy.TooManyRows
-import org.snappy.extensions.columnNames
-import org.snappy.extensions.getStatement
-import org.snappy.rowparse.RowParser
-import org.snappy.rowparse.SnappyRowImpl
+import org.snappy.command.sqlCommand
 import org.snappy.statement.StatementType
 import java.sql.Connection
-
-/**
- * Row return variants. Tells the result parser if an error should be thrown if multiple rows are
- * returned.
- */
-@PublishedApi
-internal enum class RowReturn {
-    Single,
-    First,
-}
-
-/**
- * Implementation of querying a connection for a single row. Prepares a statement using the provided
- * parameters, reading the result and parsing the row using [rowParser] into the required type [T].
- * Note, both the statement and result set are closed by default before returning from the function.
- *
- * @exception java.sql.SQLException underlining database operation fails
- * @exception IllegalStateException the connection is closed
- * @exception TooManyRows if [rowReturn] is [RowReturn.Single] and more than 1 row is returned
- */
-@PublishedApi
-internal fun <T> querySingleRowImpl(
-    connection: Connection,
-    rowParser: RowParser<T>,
-    sql: String,
-    parameters: List<Any>,
-    statementType: StatementType,
-    timeout: UInt?,
-    rowReturn: RowReturn,
-): T? {
-    return connection.getStatement(sql, parameters, statementType, timeout).use { preparedStatement ->
-        preparedStatement.executeQuery().use { rs ->
-            if (rs.next()) {
-                val row = SnappyRowImpl(rs, rs.columnNames)
-                val mappedRow = rowParser.parseRow(row)
-                if (rowReturn == RowReturn.Single && rs.next()) {
-                    throw TooManyRows()
-                }
-                mappedRow
-            } else {
-                null
-            }
-        }
-    }
-}
 
 /**
  * Execute a query against this [Connection], returning at most a single row of [T] (null if no rows
@@ -77,18 +28,9 @@ inline fun <reified T : Any> Connection.querySingleOrNull(
     parameters: List<Any> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
-): T? {
-    val rowParser = SnappyMapper.rowParserCache.getOrThrow<T>()
-    return querySingleRowImpl(
-        this,
-        rowParser,
-        sql,
-        parameters,
-        statementType,
-        timeout,
-        RowReturn.Single,
-    )
-}
+): T? = sqlCommand(sql, statementType, timeout)
+    .bindMany(parameters)
+    .querySingleOrNull(this)
 
 /**
  * Execute a query against this [Connection], returning a single row of [T]
@@ -110,9 +52,9 @@ inline fun <reified T : Any> Connection.querySingle(
     parameters: List<Any> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
-): T {
-    return querySingleOrNull(sql, parameters, statementType, timeout) ?: throw EmptyResult()
-}
+): T = sqlCommand(sql, statementType, timeout)
+    .bindMany(parameters)
+    .querySingle(this)
 
 /**
  * Execute a query against this [Connection], returning at most a single row of [T] (null if no rows
@@ -136,9 +78,9 @@ suspend inline fun <reified T : Any> Connection.querySingleOrNullSuspend(
     parameters: List<Any> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
-): T? = withContext(Dispatchers.IO) {
-    querySingleOrNull(sql, parameters, statementType, timeout)
-}
+): T? = sqlCommand(sql, statementType, timeout)
+    .bindMany(parameters)
+    .querySingleOrNullSuspend(this)
 
 /**
  * Execute a query against this [Connection], returning a single row of [T]. Suspends a call to
@@ -163,9 +105,9 @@ suspend inline fun <reified T : Any> Connection.querySingleSuspend(
     parameters: List<Any> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
-): T = withContext(Dispatchers.IO) {
-    querySingle(sql, parameters, statementType, timeout)
-}
+): T = sqlCommand(sql, statementType, timeout)
+    .bindMany(parameters)
+    .querySingleSuspend(this)
 
 /**
  * Execute a query against this [Connection], returning the first row of [T] (null if no rows
@@ -186,18 +128,9 @@ inline fun <reified T : Any> Connection.queryFirstOrNull(
     parameters: List<Any> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
-): T? {
-    val rowParser = SnappyMapper.rowParserCache.getOrThrow<T>()
-    return querySingleRowImpl(
-        this,
-        rowParser,
-        sql,
-        parameters,
-        statementType,
-        timeout,
-        RowReturn.First,
-    )
-}
+): T? = sqlCommand(sql, statementType, timeout)
+    .bindMany(parameters)
+    .queryFirstOrNull(this)
 
 /**
  * Execute a query against this [Connection], returning the first row of [T].
@@ -218,9 +151,9 @@ inline fun <reified T : Any> Connection.queryFirst(
     parameters: List<Any> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
-): T {
-    return queryFirstOrNull(sql, parameters, statementType, timeout) ?: throw EmptyResult()
-}
+): T = sqlCommand(sql, statementType, timeout)
+    .bindMany(parameters)
+    .queryFirst(this)
 
 /**
  * Execute a query against this [Connection], returning the first row of [T] (null if no rows
@@ -243,9 +176,9 @@ suspend inline fun <reified T : Any> Connection.queryFirstOrNullSuspend(
     parameters: List<Any> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
-): T? = withContext(Dispatchers.IO) {
-    queryFirstOrNull(sql, parameters, statementType, timeout)
-}
+): T? = sqlCommand(sql, statementType, timeout)
+    .bindMany(parameters)
+    .queryFirstOrNullSuspend(this)
 
 /**
  * Execute a query against this [Connection], returning the first row of [T]. Suspends a call to
@@ -269,6 +202,6 @@ suspend inline fun <reified T : Any> Connection.queryFirstSuspend(
     parameters: List<Any> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
-): T = withContext(Dispatchers.IO) {
-    queryFirst(sql, parameters, statementType, timeout)
-}
+): T = sqlCommand(sql, statementType, timeout)
+    .bindMany(parameters)
+    .queryFirstSuspend(this)

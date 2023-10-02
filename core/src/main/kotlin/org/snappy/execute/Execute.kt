@@ -2,10 +2,8 @@ package org.snappy.execute
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.snappy.extensions.getStatement
-import org.snappy.statement.SqlParameter
+import org.snappy.command.sqlCommand
 import org.snappy.statement.StatementType
-import java.sql.CallableStatement
 import java.sql.Connection
 
 /**
@@ -27,13 +25,9 @@ fun Connection.execute(
     parameters: List<Any?> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
-): Int {
-    check(!isClosed) { "Cannot query a closed connection" }
-    return getStatement(sql, parameters, statementType, timeout).use { preparedStatement ->
-        preparedStatement.execute()
-        preparedStatement.updateCount
-    }
-}
+): Int = sqlCommand(sql, statementType, timeout)
+    .bindMany(parameters)
+    .execute(this)
 
 /**
  * Execute a query against this [Connection], returning the number of rows affected by the query.
@@ -57,9 +51,9 @@ suspend fun Connection.executeSuspend(
     parameters: List<Any?> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
-): Int = withContext(Dispatchers.IO) {
-    execute(sql, parameters, statementType, timeout)
-}
+): Int = sqlCommand(sql, statementType, timeout)
+    .bindMany(parameters)
+    .executeSuspend(this)
 
 
 /**
@@ -82,13 +76,9 @@ fun Connection.executeLarge(
     parameters: List<Any?> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
-): Long {
-    check(!isClosed) { "Cannot query a closed connection" }
-    return getStatement(sql, parameters, statementType, timeout).use { preparedStatement ->
-        preparedStatement.execute()
-        preparedStatement.largeUpdateCount
-    }
-}
+): Long = sqlCommand(sql, statementType, timeout)
+    .bindMany(parameters)
+    .executeLarge(this)
 
 /**
  * Execute a query against this [Connection], returning the number of rows affected by the query.
@@ -113,9 +103,9 @@ suspend fun Connection.executeLargeSuspend(
     parameters: List<Any?> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
-): Long = withContext(Dispatchers.IO) {
-    executeLarge(sql, parameters, statementType, timeout)
-}
+): Long = sqlCommand(sql, statementType, timeout)
+    .bindMany(parameters)
+    .executeLargeSuspend(this)
 
 /**
  * Execute a stored procedure with `OUT` parameters against this [Connection], returning a [List]
@@ -134,24 +124,9 @@ fun Connection.executeOutParameters(
     procedureName: String,
     parameters: List<Any?>,
     timeout: UInt? = null,
-): List<Any?> {
-    check(!isClosed) { "Cannot query a closed connection" }
-    return getStatement(
-        procedureName,
-        parameters,
-        StatementType.StoredProcedure,
-        timeout,
-    ).use { callableStatement ->
-        callableStatement.execute()
-        callableStatement as CallableStatement
-        parameters.mapIndexedNotNull { index, parameter ->
-            if (parameter !is SqlParameter.Out) {
-                return@mapIndexedNotNull null
-            }
-            callableStatement.getObject(index + 1)
-        }
-    }
-}
+): List<Any?> = sqlCommand(procedureName, StatementType.StoredProcedure, timeout)
+    .bindMany(parameters)
+    .executeOutParameters(this)
 
 /**
  * Execute a stored procedure with `OUT` parameters against this [Connection], returning a [List]
@@ -173,6 +148,6 @@ suspend fun Connection.executeOutParametersSuspend(
     procedureName: String,
     parameters: List<Any?>,
     timeout: UInt? = null,
-): List<Any?> = withContext(Dispatchers.IO) {
-    executeOutParameters(procedureName, parameters, timeout)
-}
+): List<Any?> = sqlCommand(procedureName, StatementType.StoredProcedure, timeout)
+    .bindMany(parameters)
+    .executeOutParametersSuspend(this)

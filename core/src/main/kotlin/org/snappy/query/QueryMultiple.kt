@@ -2,7 +2,7 @@ package org.snappy.query
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.snappy.extensions.getStatement
+import org.snappy.command.sqlCommand
 import org.snappy.result.MultiResult
 import org.snappy.statement.StatementType
 import java.sql.Connection
@@ -27,11 +27,9 @@ fun Connection.queryMultiple(
     parameters: List<Any> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
-): MultiResult {
-    val statement = getStatement(sql, parameters, statementType, timeout)
-    statement.execute()
-    return MultiResult(statement)
-}
+): MultiResult = sqlCommand(sql, statementType, timeout)
+    .bindMany(parameters)
+    .queryMultiple(this)
 
 /**
  * Execute a query against this [Connection], returning a reader for multiple results. Suspends a
@@ -56,6 +54,6 @@ suspend inline fun Connection.queryMultipleSuspend(
     parameters: List<Any> = emptyList(),
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
-): MultiResult = withContext(Dispatchers.IO) {
-    queryMultiple(sql, parameters, statementType, timeout)
-}
+): MultiResult = sqlCommand(sql, statementType, timeout)
+    .bindMany(parameters)
+    .queryMultipleSuspend(this)

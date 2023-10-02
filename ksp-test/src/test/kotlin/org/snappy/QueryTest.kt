@@ -2,7 +2,7 @@ package org.snappy
 
 import org.junit.jupiter.api.assertThrows
 import org.snappy.data.SimpleTestClass
-import org.snappy.query.query
+import org.snappy.command.sqlCommand
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
@@ -31,24 +31,25 @@ class QueryTest {
         val rowCount = 10000
         val textValue = "Test"
         val intValue = 1
-        val query = """
-            WITH RECURSIVE cnt(x) AS (
-                SELECT 1
-                UNION ALL
-                SELECT x+1 FROM cnt
-                LIMIT ?
-            )
-            SELECT c.x AS longField, r.stringField, r.intField
-            FROM cnt c
-            CROSS JOIN (
-                SELECT ? AS stringField, ? AS intField
-            ) r
-        """.trimIndent()
         useConnection { connection ->
-            val result = connection.query<SimpleTestClass>(
-                query,
-                listOf(rowCount, textValue, intValue),
-            ).toList()
+            val result = sqlCommand("""
+                WITH RECURSIVE cnt(x) AS (
+                    SELECT 1
+                    UNION ALL
+                    SELECT x+1 FROM cnt
+                    LIMIT ?
+                )
+                SELECT c.x AS longField, r.stringField, r.intField
+                FROM cnt c
+                CROSS JOIN (
+                    SELECT ? AS stringField, ? AS intField
+                ) r
+            """.trimIndent())
+                .bind(rowCount)
+                .bind(textValue)
+                .bind(intValue)
+                .query<SimpleTestClass>(connection)
+                .toList()
 
             assertEquals(rowCount, result.size)
             val row = result.first()
@@ -68,12 +69,15 @@ class QueryTest {
     fun `query should return empty sequence when valid query with no rows`() {
         val textValue = "Test"
         val intValue = 1
-        val query = "SELECT * FROM (SELECT ? AS stringField, ? AS intField) t WHERE 1 = 2"
         useConnection { connection ->
-            val result = connection.query<SimpleTestClass>(
-                query,
-                listOf(textValue, intValue),
-            )
+            val result = sqlCommand("""
+                SELECT *
+                FROM (SELECT ? AS stringField, ? AS intField) t
+                WHERE 1 = 2
+            """.trimIndent())
+                .bind(textValue)
+                .bind(intValue)
+                .query<SimpleTestClass>(connection)
 
             assertTrue(result.none())
         }
@@ -83,14 +87,14 @@ class QueryTest {
     fun `query should fail when connection closed`() {
         val textValue = "Test"
         val intValue = 1
-        val query = "SELECT * FROM (SELECT ? AS stringField, ? AS intField) t WHERE 1 = 2"
         useConnection { connection ->
             connection.close()
             assertThrows<IllegalStateException> {
-                connection.query<SimpleTestClass>(
-                    query,
-                    listOf(textValue, intValue),
-                ).toList()
+                sqlCommand("SELECT * FROM (SELECT ? AS stringField, ? AS intField) t WHERE 1 = 2")
+                    .bind(textValue)
+                    .bind(intValue)
+                    .query<SimpleTestClass>(connection)
+                    .toList()
             }
         }
     }
