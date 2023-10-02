@@ -1,3 +1,4 @@
+@file:Suppress("UNUSED")
 package org.snappy.decode
 
 import org.snappy.rowparse.SnappyRow

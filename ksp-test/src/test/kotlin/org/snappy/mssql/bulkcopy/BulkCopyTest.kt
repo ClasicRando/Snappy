@@ -3,7 +3,6 @@ package org.snappy.mssql.bulkcopy
 import com.microsoft.sqlserver.jdbc.ISQLServerConnection
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
-import org.snappy.copy.ToObjectRow
 import org.snappy.execute.execute
 import org.snappy.execute.executeSuspend
 import org.snappy.mssql.tvp.TvpTestRow

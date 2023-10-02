@@ -233,17 +233,20 @@ class RowParserProcessor(
 
         override fun visitFunctionDeclaration(function: KSFunctionDeclaration, data: Unit) {
             val classDeclaration = function.parentDeclaration as? KSClassDeclaration ?: return
+            val simpleName = classDeclaration.simpleName.asString()
             if (classDeclaration.typeParameters.any()) {
-                error("Cannot generate row parser for class with generic parameters, '${classDeclaration.simpleName.asString()}'")
+                error("Cannot generate row parser for class with generic parameters, '$simpleName'")
             }
             if (classDeclaration.modifiers.contains(Modifier.DATA)) {
                 generateDataClassRowParser(function, classDeclaration)
+                logger.info("Created data class row parser for '$simpleName'")
                 return
             }
             if (function.parameters.any()) {
-                error("Cannot generate Pojo row parser if constructor has parameters, '${classDeclaration.simpleName.asString()}'")
+                error("Cannot generate Pojo row parser if constructor has parameters, '$simpleName'")
             }
             generatePojoClassRowParser(classDeclaration)
+            logger.info("Created pojo class row parser for '$simpleName'")
         }
     }
 

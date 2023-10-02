@@ -1,3 +1,4 @@
+@file:Suppress("UNUSED")
 package org.snappy.postgresql.type
 
 import org.postgresql.geometric.PGbox

@@ -183,6 +183,7 @@ class TableTypeProcessor(
                 error("Cannot generate table type for class that is not a data class '$simpleName'")
             }
             generateTableType(function, classDeclaration)
+            logger.info("Created table type class for '$simpleName'")
         }
     }
 

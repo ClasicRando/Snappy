@@ -1,5 +1,6 @@
 package org.snappy.benchmarks
 
+import java.sql.Connection
 import java.sql.DriverManager
 
 
@@ -9,4 +10,4 @@ private const val missingEnvironmentVariableMessage = "To run MultiResultTest " 
 private val connectionString = System.getenv("SNAPPY_MSSQL_CONNECTION_STRING")
     ?: throw IllegalStateException(missingEnvironmentVariableMessage)
 
-fun getConnection() = DriverManager.getConnection(connectionString)
+fun getConnection(): Connection = DriverManager.getConnection(connectionString)
