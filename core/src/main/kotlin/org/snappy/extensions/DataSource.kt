@@ -53,8 +53,8 @@ inline fun <T> DataSource.useTransaction(block: Connection.() -> T): T {
  * @see DataSource.getConnection
  * @see AutoCloseable.use
  */
-suspend inline fun <T> DataSource.useTransaction(
+suspend inline fun <T> DataSource.useTransactionSuspend(
     crossinline block: suspend Connection.() -> T,
 ): T = withContext(Dispatchers.IO) {
-    this@useTransaction.connection.asTransactionSuspend(block)
+    this@useTransactionSuspend.connection.asTransactionSuspend(block)
 }
