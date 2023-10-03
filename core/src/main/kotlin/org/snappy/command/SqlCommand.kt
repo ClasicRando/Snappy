@@ -28,11 +28,13 @@ fun sqlCommand(
 ): SqlCommand = SqlCommand(sql, statementType, timeout)
 
 class SqlCommand internal constructor(
-    internal val sql: String,
-    internal val statementType: StatementType,
-    internal val timeout: UInt?,
-) {
-    internal val commandParameters = mutableListOf<SqlParameter>()
+    override val sql: String,
+    override val statementType: StatementType,
+    override val timeout: UInt?,
+) : Command {
+    override val commandParameters = mutableListOf<SqlParameter>()
+
+    override fun parameterCount(): Int = commandParameters.size
 
     fun <T> bind(parameter: T): SqlCommand {
         if (parameter is SqlParameter) {

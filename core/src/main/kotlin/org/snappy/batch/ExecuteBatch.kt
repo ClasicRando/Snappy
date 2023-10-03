@@ -3,19 +3,9 @@ package org.snappy.batch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.snappy.BatchExecutionFailed
-import org.snappy.extensions.chunkedIter
-import org.snappy.extensions.getStatement
-import org.snappy.extensions.setParameter
-import org.snappy.command.sqlCommand
+import org.snappy.command.batchSqlCommand
 import org.snappy.statement.StatementType
 import java.sql.Connection
-
-private const val EXECUTE_FAILED_LONG = java.sql.Statement.EXECUTE_FAILED.toLong()
-
-/** Return the [batchSize] provided or 100 if the value is null or equal to zero */
-internal fun batchSizeOrDefault(batchSize: UInt?): Int {
-    return batchSize?.toInt()?.takeIf { it > 0 } ?: 100
-}
 
 /**
  * Execute a query against this [Connection], returning the number of rows affected by the query.
@@ -41,14 +31,13 @@ fun <T : ParameterBatch> Connection.executeBatch(
     failOnErrorReturn: Boolean = false,
     batchedParameters: suspend SequenceScope<T>.() -> Unit,
 ): IntArray {
-    return executeBatch(
-        sql,
-        sequence(batchedParameters),
+    return batchSqlCommand(sql,
         statementType,
         timeout,
         batchSize,
         failOnErrorReturn,
-    )
+        sequence(batchedParameters)
+    ).execute(this)
 }
 
 /**
@@ -69,31 +58,19 @@ fun <T : ParameterBatch> Connection.executeBatch(
  */
 fun <T : ParameterBatch> Connection.executeBatch(
     sql: String,
-    batchedParameters: Sequence<T> = emptySequence(),
+    batchedParameters: Sequence<T>,
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
     batchSize: UInt? = null,
     failOnErrorReturn: Boolean = false,
 ): IntArray {
-    val finalBatchSize = batchSizeOrDefault(batchSize)
-    val command = sqlCommand(sql, statementType, timeout)
-    return getStatement(command).use { preparedStatement ->
-        batchedParameters.chunkedIter(finalBatchSize).fold(intArrayOf()) { acc, batchedParameter ->
-            var batchNumber = 0u
-            for (batch in batchedParameter) {
-                for ((i, parameter) in batch.toSqlParameterBatch().withIndex()) {
-                    preparedStatement.setParameter(i + 1, parameter)
-                }
-                preparedStatement.addBatch()
-                batchNumber++
-            }
-            val result = preparedStatement.executeBatch()
-            if (failOnErrorReturn && result.any { it == java.sql.Statement.EXECUTE_FAILED }) {
-                throw BatchExecutionFailed(sql, batchNumber)
-            }
-            acc + result
-        }
-    }
+    return batchSqlCommand(sql,
+        statementType,
+        timeout,
+        batchSize,
+        failOnErrorReturn,
+        batchedParameters,
+    ).execute(this)
 }
 
 /**
@@ -119,15 +96,14 @@ suspend fun <T : ParameterBatch> Connection.executeBatchSuspend(
     batchSize: UInt? = null,
     failOnErrorReturn: Boolean = false,
     batchedParameters: suspend SequenceScope<T>.() -> Unit,
-): IntArray = withContext(Dispatchers.IO) {
-    executeBatch(
-        sql,
-        sequence(batchedParameters),
+): IntArray {
+    return batchSqlCommand(sql,
         statementType,
         timeout,
         batchSize,
         failOnErrorReturn,
-    )
+        batchedParameters,
+    ).executeSuspend(this)
 }
 
 /**
@@ -141,8 +117,8 @@ suspend fun <T : ParameterBatch> Connection.executeBatchSuspend(
  * [StatementType.StoredProcedure]
  * @param timeout query timeout in seconds, default is unlimited time
  * @param batchSize size of batches to send to the database for processing, default is 100
- * @param transaction flag indicating that the operation should be wrapped in a transaction for
- * consistency (i.e. all batches are successful or no batches are successful), default is false
+ * @param failOnErrorReturn flag indicating that the operation should throw a [BatchExecutionFailed]
+ * when the records affected count is [java.sql.Statement.EXECUTE_FAILED]
  *
  * @exception java.sql.SQLException underlining database operation fails
  * @exception IllegalStateException the connection is closed
@@ -156,9 +132,15 @@ suspend fun <T : ParameterBatch> Connection.executeBatchSuspend(
     statementType: StatementType = StatementType.Text,
     timeout: UInt? = null,
     batchSize: UInt? = null,
-    transaction: Boolean = false,
-): IntArray = withContext(Dispatchers.IO) {
-    executeBatch(sql, batchedParameters, statementType, timeout, batchSize, transaction)
+    failOnErrorReturn: Boolean = false,
+): IntArray {
+    return batchSqlCommand(sql,
+        statementType,
+        timeout,
+        batchSize,
+        failOnErrorReturn,
+        batchedParameters,
+    ).executeSuspend(this)
 }
 
 /**
@@ -188,14 +170,13 @@ fun <T : ParameterBatch> Connection.executeLargeBatch(
     failOnErrorReturn: Boolean = false,
     batchedParameters: SequenceScope<T>.() -> Unit,
 ): LongArray {
-    return executeLargeBatch(
-        sql,
-        sequence(batchedParameters),
+    return batchSqlCommand(sql,
         statementType,
         timeout,
         batchSize,
         failOnErrorReturn,
-    )
+        batchedParameters,
+    ).executeLarge(this)
 }
 
 /**
@@ -225,25 +206,13 @@ fun <T : ParameterBatch> Connection.executeLargeBatch(
     batchSize: UInt? = null,
     failOnErrorReturn: Boolean = false,
 ): LongArray {
-    val finalBatchSize = batchSizeOrDefault(batchSize)
-    val command = sqlCommand(sql, statementType, timeout)
-    return getStatement(command).use { preparedStatement ->
-        batchedParameters.chunked(finalBatchSize).fold(longArrayOf()) { acc, batchedParameter ->
-            var batchNumber = 0u
-            for (batch in batchedParameter) {
-                for ((i, parameter) in batch.toSqlParameterBatch().withIndex()) {
-                    preparedStatement.setParameter(i + 1, parameter)
-                }
-                preparedStatement.addBatch()
-                batchNumber++
-            }
-            val result = preparedStatement.executeLargeBatch()
-            if (failOnErrorReturn && result.any { it == EXECUTE_FAILED_LONG }) {
-                throw BatchExecutionFailed(sql, batchNumber)
-            }
-            acc + result
-        }
-    }
+    return batchSqlCommand(sql,
+        statementType,
+        timeout,
+        batchSize,
+        failOnErrorReturn,
+        batchedParameters,
+    ).executeLarge(this)
 }
 
 /**
@@ -275,15 +244,14 @@ suspend fun <T : ParameterBatch> Connection.executeLargeBatchSuspend(
     batchSize: UInt? = null,
     failOnErrorReturn: Boolean = false,
     batchedParameters: SequenceScope<T>.() -> Unit,
-): LongArray = withContext(Dispatchers.IO) {
-    executeLargeBatch(
-        sql,
-        sequence(batchedParameters),
+): LongArray {
+    return batchSqlCommand(sql,
         statementType,
         timeout,
         batchSize,
         failOnErrorReturn,
-    )
+        batchedParameters,
+    ).executeLargeSuspend(this)
 }
 
 /**
@@ -315,6 +283,12 @@ suspend fun <T : ParameterBatch> Connection.executeLargeBatchSuspend(
     timeout: UInt? = null,
     batchSize: UInt? = null,
     failOnErrorReturn: Boolean = false,
-): LongArray = withContext(Dispatchers.IO) {
-    executeLargeBatch(sql, batchedParameters, statementType, timeout, batchSize, failOnErrorReturn)
+): LongArray {
+    return batchSqlCommand(sql,
+        statementType,
+        timeout,
+        batchSize,
+        failOnErrorReturn,
+        batchedParameters,
+    ).executeLargeSuspend(this)
 }
