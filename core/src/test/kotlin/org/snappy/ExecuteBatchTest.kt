@@ -1,6 +1,6 @@
 package org.snappy
 
-import org.snappy.batch.batchSizeOrDefault
+import org.snappy.command.batchSizeOrDefault
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
