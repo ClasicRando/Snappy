@@ -96,4 +96,8 @@ abstract class AbstractLiteralParser(literal: String) {
     fun readInstant(): Instant? = tryParseNextBuffer("Instant") {
         Instant.from(instantFormatter.parse(it))
     }
+
+    inline fun <reified T : Enum<T>> readEnum(): T? = tryParseNextBuffer("Enum") {
+        enumValues<T>().first { label -> label.name.lowercase() == it.lowercase() }
+    }
 }

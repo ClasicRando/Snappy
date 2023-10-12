@@ -5,4 +5,9 @@ package org.snappy.postgresql.type
  * database. That type can either be a composite or enum type with the specified [name]
  */
 @Target(AnnotationTarget.CLASS)
-annotation class PgType(val name: String)
+annotation class PgType(
+    val name: String,
+    val arrayType: Boolean = true,
+    val decoder: Boolean = true,
+    val encoder: Boolean = true,
+)

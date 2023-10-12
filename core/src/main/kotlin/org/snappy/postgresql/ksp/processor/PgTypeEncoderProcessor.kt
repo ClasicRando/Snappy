@@ -11,12 +11,14 @@ import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.Modifier
 import com.google.devtools.ksp.validate
 import org.snappy.ksp.appendText
 import org.snappy.ksp.hasAnnotation
 import org.snappy.ksp.isInstance
 import org.snappy.postgresql.type.PgType
 import org.snappy.postgresql.type.ToPgObject
+import javax.swing.text.StyledEditorKit.BoldAction
 
 class PgTypeEncoderProcessor(
     private val codeGenerator: CodeGenerator,
@@ -40,7 +42,11 @@ class PgTypeEncoderProcessor(
                 val hasEncoder = annotated.getAllSuperTypes().any {
                     it.declaration.simpleName.asString() == ToPgObject::class.simpleName!!
                 }
-                if (hasEncoder) null else annotated
+                val encoderNeeded = annotated.annotations
+                    .first { it.isInstance<PgType>() }
+                    .arguments[3]
+                    .value as Boolean
+                if (hasEncoder || !encoderNeeded) null else annotated
             }
             .toList()
         if (encoders.isNotEmpty()) {
@@ -54,23 +60,45 @@ class PgTypeEncoderProcessor(
         val name = property.simpleName.asString()
         val propertyTypeDeclaration = property.type.resolve().declaration as KSClassDeclaration
         val simpleName = propertyTypeDeclaration.simpleName.asString()
-        var isComposite = false
+        var methodCall = ""
 
         val readType = when {
             propertyTypeDeclaration.hasAnnotation<PgType>() -> {
-                isComposite = true
+                val implementsToPgObject = propertyTypeDeclaration.getAllSuperTypes().any {
+                    it.declaration.simpleName.asString() == ToPgObject::class.simpleName!!
+                }
+                methodCall = if (implementsToPgObject) "" else ".encode()"
                 "Composite"
+            }
+            propertyTypeDeclaration.classKind == ClassKind.ENUM_CLASS -> {
+                "Enum"
+            }
+            simpleName == "PgJson" -> {
+                "Composite"
+            }
+            propertyTypeDeclaration.modifiers.any { it == Modifier.VALUE } -> {
+                val parameter = propertyTypeDeclaration.primaryConstructor!!.parameters.first()
+                val parameterTypeDeclaration = parameter.type.resolve().declaration as KSClassDeclaration
+                val parameterTypeName = parameterTypeDeclaration.simpleName.asString()
+                if (parameterTypeName !in validAppendTypes) {
+                    error("Value class must have valid append type")
+                }
+                if (
+                    propertyTypeDeclaration.getDeclaredProperties().none { prop ->
+                        prop.simpleName.asString() == "value" && prop.modifiers.none {
+                            it == Modifier.PRIVATE || it == Modifier.PROTECTED
+                        }
+                    }
+                ) {
+                    error("Value class properties must have a public value property")
+                }
+                methodCall = ".value"
+                parameterTypeName
             }
             propertyTypeDeclaration.simpleName.asString() == "List" -> "Iterable"
             simpleName in validAppendTypes -> simpleName
             else -> error("Property $name is not able to be parsed into a composite literal")
         }
-        val methodCall = if (isComposite) {
-            val implementsToPgObject = propertyTypeDeclaration.getAllSuperTypes().any {
-                it.declaration.simpleName.asString() == ToPgObject::class.simpleName!!
-            }
-            if (implementsToPgObject) "" else ".encode()"
-        } else ""
         return "builder.append$readType(this.$name$methodCall)"
     }
 
@@ -148,6 +176,7 @@ class PgTypeEncoderProcessor(
         """.trimIndent())
         logger.info("Created encoder file for encoder extensions")
     }
+
     companion object {
         const val DESTINATION_PACKAGE: String = "org.snappy.postgresql.composite.encoders"
         val validAppendTypes = listOf(

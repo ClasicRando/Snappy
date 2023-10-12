@@ -183,6 +183,12 @@ class PgCompositeLiteralBuilder {
         return this
     }
 
+    fun <E : Enum<E>> appendEnum(value: E?): PgCompositeLiteralBuilder {
+        prependCommaIfNeeded()
+        value?.let { stringBuilder.append(it.name) }
+        return this
+    }
+
     override fun toString(): String {
         return stringBuilder.run {
             append(')')
