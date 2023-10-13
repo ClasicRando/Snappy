@@ -1,6 +1,8 @@
 package org.snappy.ksp
 
-abstract class AbstractFileGenerator : FileGenerator {
+import com.google.devtools.ksp.symbol.KSVisitorVoid
+
+abstract class FileGeneratorVisitor : KSVisitorVoid(), FileGenerator {
     private val imports = mutableSetOf<String>()
 
     protected fun addImport(import: String) {

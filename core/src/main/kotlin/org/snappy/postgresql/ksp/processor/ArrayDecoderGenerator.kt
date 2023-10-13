@@ -4,12 +4,10 @@ import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import org.snappy.ksp.AbstractFileGenerator
 import org.snappy.ksp.appendText
 
 class ArrayDecoderGenerator(
-    private val constructorFunction: KSFunctionDeclaration,
     private val classDeclaration: KSClassDeclaration,
     private val logger: KSPLogger,
 ) : AbstractFileGenerator() {
@@ -24,7 +22,7 @@ class ArrayDecoderGenerator(
         val classPackage = classDeclaration.packageName.asString()
         val className = classDeclaration.simpleName.asString()
         val file = codeGenerator.createNewFile(
-            dependencies = Dependencies(true, constructorFunction.containingFile!!),
+            dependencies = Dependencies(true, classDeclaration.containingFile!!),
             packageName = PgTypeDecoderProcessor.DESTINATION_PACKAGE,
             fileName = "${className}ArrayDecoders",
         )

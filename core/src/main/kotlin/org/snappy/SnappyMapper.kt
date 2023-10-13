@@ -43,4 +43,8 @@ object SnappyMapper {
         decoderCache.loadCache()
         rowParserCache.loadCache()
     }
+
+    init {
+        loadCache()
+    }
 }

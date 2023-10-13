@@ -8,6 +8,9 @@ import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSValueParameter
+import com.google.devtools.ksp.symbol.KSVisitorVoid
 import com.google.devtools.ksp.validate
 import org.snappy.copy.ToObjectRow
 import org.snappy.ksp.appendText
@@ -21,6 +24,7 @@ class ObjectRowProcessor(
     private var hasRun = false
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
+        logger.warn(resolver.getSymbolsWithAnnotation(ObjectRow::class.java.name).joinToString { (it as KSClassDeclaration).simpleName.asString() })
         if (hasRun) {
             return emptyList()
         }
@@ -31,7 +35,12 @@ class ObjectRowProcessor(
                 val hasEncoder = annotated.getAllSuperTypes().any {
                     it.declaration.simpleName.asString() == ToObjectRow::class.simpleName!!
                 }
-                if (hasEncoder) null else annotated
+                if (hasEncoder) {
+                    return@mapNotNull null
+                }
+                val visitor = ObjectRowVisitor()
+                annotated.accept(visitor, Unit)
+                visitor
             }
             .toList()
         if (encoders.isNotEmpty()) {
@@ -41,51 +50,68 @@ class ObjectRowProcessor(
         return emptyList()
     }
 
-    private fun getObjectRowMethod(objectRowClass: KSClassDeclaration): String {
-        val classPackage = objectRowClass.packageName.asString()
-        val className = objectRowClass.simpleName.asString()
-        val parameters = objectRowClass.primaryConstructor!!.parameters.joinToString(
-            prefix = "listOf(\n                        ",
-            separator = ",\n                        ",
-            postfix = ",\n                    )"
-        ) { param ->
-            val hasBulkCopyModifier = objectRowClass.getAllFunctions().any {
-                it.simpleName.asString() == "bulkCopyString"
-            }
-            val additionalModifier = when {
-                hasBulkCopyModifier -> ".bulkCopyString()"
-                else -> ""
-            }
-            "obj.${param.name!!.asString()}$additionalModifier"
-        }
+    inner class ObjectRowVisitor : KSVisitorVoid() {
+        lateinit var classDeclaration: KSClassDeclaration
+        private lateinit var className: String
+        private lateinit var classPackage: String
+        private val objectList = mutableListOf<String>()
 
-        imports += "$classPackage.$className"
-        return """
+        fun objectRowMethod(): String {
+            val parameters = objectList.joinToString(
+                prefix = "listOf(\n                        ",
+                separator = ",\n                        ",
+                postfix = ",\n                    )",
+            )
+            imports += "$classPackage.$className"
+            return """
             fun Sequence<$className>.mapToObjectRow(): Sequence<ToObjectRow> = map { obj ->
                 ToObjectRow {
                     $parameters
                 }
             }
         """.trim()
-    }
-
-    private fun processObjectRowTypes(objectRowTypes: List<KSClassDeclaration>) {
-        val file = try {
-            codeGenerator.createNewFile(
-                dependencies = Dependencies(
-                    true,
-                    *objectRowTypes.map { it.containingFile!! }.toTypedArray(),
-                ),
-                packageName = DESTINATION_PACKAGE,
-                fileName = "Generators",
-            )
-        } catch (ex: FileAlreadyExistsException) {
-            logger.info("Skipping creation since file already exists")
-            return
         }
 
+        override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
+            this.classDeclaration = classDeclaration
+            className = classDeclaration.simpleName.asString()
+            classPackage = classDeclaration.packageName.asString()
+            classDeclaration.primaryConstructor!!.accept(this, data)
+        }
+
+        override fun visitFunctionDeclaration(function: KSFunctionDeclaration, data: Unit) {
+            for (parameter in function.parameters) {
+                parameter.accept(this, data)
+            }
+        }
+
+        override fun visitValueParameter(valueParameter: KSValueParameter, data: Unit) {
+            val parameterClassDeclaration = valueParameter.type
+                .resolve()
+                .declaration as KSClassDeclaration
+            val hasBulkCopyModifier = parameterClassDeclaration.getAllFunctions().any {
+                it.simpleName.asString() == "bulkCopyString"
+            }
+            val additionalModifier = when {
+                hasBulkCopyModifier -> ".bulkCopyString()"
+                else -> ""
+            }
+            objectList += "obj.${valueParameter.name!!.asString()}$additionalModifier"
+        }
+    }
+
+    private fun processObjectRowTypes(objectRowTypes: List<ObjectRowVisitor>) {
+        val file = codeGenerator.createNewFile(
+            dependencies = Dependencies(
+                true,
+                *objectRowTypes.map { it.classDeclaration.containingFile!! }.toTypedArray(),
+            ),
+            packageName = DESTINATION_PACKAGE,
+            fileName = "Generators",
+        )
+
         val encodeMethods = objectRowTypes.joinToString("\n\n            ") {
-            getObjectRowMethod(it)
+            it.objectRowMethod()
         }
 
         val importsOrdered = imports.sorted().joinToString(
