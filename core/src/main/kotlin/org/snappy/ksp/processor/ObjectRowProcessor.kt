@@ -24,7 +24,6 @@ class ObjectRowProcessor(
     private var hasRun = false
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        logger.warn(resolver.getSymbolsWithAnnotation(ObjectRow::class.java.name).joinToString { (it as KSClassDeclaration).simpleName.asString() })
         if (hasRun) {
             return emptyList()
         }

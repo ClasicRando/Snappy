@@ -1,5 +1,6 @@
 plugins {
     kotlin("plugin.serialization")
+    `maven-publish`
 }
 
 val kotlinReflectVersion: String by project
@@ -26,4 +27,23 @@ dependencies {
     // https://mvnrepository.com/artifact/org.postgresql/postgresql
     testImplementation("org.postgresql:postgresql:$postgresqlJdbcVersion")
     testImplementation("io.mockk:mockk:$mockkVersion")
+}
+
+publishing {
+    repositories {
+        mavenLocal()
+    }
+    publications {
+        create<MavenPublication>("mavenJava") {
+            groupId = "com.github.snappy"
+            artifactId = "snappy"
+            version = "0.1"
+            pom {
+                name = "Snappy"
+                description = "Kotlin library providing similar functionality to Dapper for the JDBC"
+                url = "https://github.com/ClasicRando/snappy"
+            }
+            from(components["kotlin"])
+        }
+    }
 }
