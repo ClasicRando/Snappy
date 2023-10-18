@@ -1,5 +1,6 @@
 package org.snappy.rowparse
 
+import org.snappy.SnappyMapper
 import java.math.BigDecimal
 import java.sql.Array
 import java.sql.Date
@@ -21,6 +22,9 @@ class SnappyRowImpl(
     private val resultSet: ResultSet,
     private val columnNames: List<String>,
 ) : SnappyRow {
+    private val columnNamesCleaned by lazy {
+        columnNames.map { it.replace("_", "").lowercase() }
+    }
 
     /** Number of columns in the row */
     override val size: Int = resultSet.metaData.columnCount
@@ -31,13 +35,28 @@ class SnappyRowImpl(
     /** Check if a row contains the specified [key] */
     override fun containsKey(key: String) = columnNames.contains(key)
 
-    override fun getStringNullable(key: String): String? = resultSet.getString(key)
+    private fun getColumnIndex(key: String): Int {
+        val index = columnNames.indexOf(key)
+        if (index >= 0) {
+            return index
+        }
 
-    override fun getString(key: String): String = resultSet.getString(key)
+        if (!SnappyMapper.allowUnderscoreMatch) {
+            error("Could not find column for key = '$key'")
+        }
+
+        return columnNamesCleaned.indexOf(key.lowercase())
+            .takeIf { it >= 0 }
+            ?: error("Could not find column for key = '$key'")
+    }
+
+    override fun getStringNullable(key: String): String? = resultSet.getString(getColumnIndex(key))
+
+    override fun getString(key: String): String = getStringNullable(key)
         ?: error("Expected not null string value but found null")
 
     override fun getBooleanNullable(key: String): Boolean? {
-        val result = resultSet.getBoolean(key)
+        val result = resultSet.getBoolean(getColumnIndex(key))
         if (resultSet.wasNull()) {
             return null
         }
@@ -48,7 +67,7 @@ class SnappyRowImpl(
         ?: error("Expected not null boolean value but found null")
 
     override fun getByteNullable(key: String): Byte? {
-        val result = resultSet.getByte(key)
+        val result = resultSet.getByte(getColumnIndex(key))
         if (resultSet.wasNull()) {
             return null
         }
@@ -59,7 +78,7 @@ class SnappyRowImpl(
         ?: error("Expected not null byte value but found null")
 
     override fun getShortNullable(key: String): Short? {
-        val result = resultSet.getShort(key)
+        val result = resultSet.getShort(getColumnIndex(key))
         if (resultSet.wasNull()) {
             return null
         }
@@ -70,7 +89,7 @@ class SnappyRowImpl(
         ?: error("Expected not null short value but found null")
 
     override fun getIntNullable(key: String): Int? {
-        val result = resultSet.getInt(key)
+        val result = resultSet.getInt(getColumnIndex(key))
         if (resultSet.wasNull()) {
             return null
         }
@@ -81,7 +100,7 @@ class SnappyRowImpl(
         ?: error("Expected not null int value but found null")
 
     override fun getLongNullable(key: String): Long? {
-        val result = resultSet.getLong(key)
+        val result = resultSet.getLong(getColumnIndex(key))
         if (resultSet.wasNull()) {
             return null
         }
@@ -92,7 +111,7 @@ class SnappyRowImpl(
         ?: error("Expected not null long value but found null")
 
     override fun getFloatNullable(key: String): Float? {
-        val result = resultSet.getFloat(key)
+        val result = resultSet.getFloat(getColumnIndex(key))
         if (resultSet.wasNull()) {
             return null
         }
@@ -103,7 +122,7 @@ class SnappyRowImpl(
         ?: error("Expected not null float value but found null")
 
     override fun getDoubleNullable(key: String): Double? {
-        val result = resultSet.getDouble(key)
+        val result = resultSet.getDouble(getColumnIndex(key))
         if (resultSet.wasNull()) {
             return null
         }
@@ -113,98 +132,104 @@ class SnappyRowImpl(
     override fun getDouble(key: String): Double = getDoubleNullable(key)
         ?: error("Expected not null double value but found null")
 
-    override fun getBigDecimalNullable(key: String): BigDecimal? = resultSet.getBigDecimal(key)
+    override fun getBigDecimalNullable(key: String): BigDecimal? {
+        return resultSet.getBigDecimal(getColumnIndex(key))
+    }
 
-    override fun getBigDecimal(key: String): BigDecimal = resultSet.getBigDecimal(key)
-        ?: error("Expected not null big decimal value but found null")
+    override fun getBigDecimal(key: String): BigDecimal {
+        return resultSet.getBigDecimal(getColumnIndex(key))
+            ?: error("Expected not null big decimal value but found null")
+    }
 
-    override fun getBytesNullable(key: String): ByteArray? = resultSet.getBytes(key)
+    override fun getBytesNullable(key: String): ByteArray? = resultSet.getBytes(getColumnIndex(key))
 
-    override fun getBytes(key: String): ByteArray = resultSet.getBytes(key)
+    override fun getBytes(key: String): ByteArray = getBytesNullable(key)
         ?: error("Expected not null byte array value but found null")
 
-    override fun getDateNullable(key: String): Date? = resultSet.getDate(key)
+    override fun getDateNullable(key: String): Date? = resultSet.getDate(getColumnIndex(key))
 
-    override fun getDate(key: String): Date = resultSet.getDate(key)
+    override fun getDate(key: String): Date = getDateNullable(key)
         ?: error("Expected not null date value but found null")
 
-    override fun getTimeNullable(key: String): Time? = resultSet.getTime(key)
+    override fun getTimeNullable(key: String): Time? = resultSet.getTime(getColumnIndex(key))
 
-    override fun getTime(key: String): Time = resultSet.getTime(key)
+    override fun getTime(key: String): Time = getTimeNullable(key)
         ?: error("Expected not null time value but found null")
 
-    override fun getTimestampNullable(key: String): Timestamp? = resultSet.getTimestamp(key)
+    override fun getTimestampNullable(key: String): Timestamp? {
+        return resultSet.getTimestamp(getColumnIndex(key))
+    }
 
-    override fun getTimestamp(key: String): Timestamp = resultSet.getTimestamp(key)
+    override fun getTimestamp(key: String): Timestamp = getTimestampNullable(key)
         ?: error("Expected not null timestamp value but found null")
 
+    override fun getLocalDateNullable(key: String): LocalDate? {
+        return resultSet.getObject(getColumnIndex(key), LocalDate::class.java)
+    }
+
     override fun getLocalDate(key: String): LocalDate {
-        return resultSet.getObject(key, LocalDate::class.java)
+        return getLocalDateNullable(key)
             ?: error("Expected not null local date value but found null")
     }
 
-    override fun getLocalDateNullable(key: String): LocalDate? {
-        return resultSet.getObject(key, LocalDate::class.java)
+    override fun getLocalTimeNullable(key: String): LocalTime? {
+        return resultSet.getObject(getColumnIndex(key), LocalTime::class.java)
     }
 
     override fun getLocalTime(key: String): LocalTime {
-        return resultSet.getObject(key, LocalTime::class.java)
+        return getLocalTimeNullable(key)
             ?: error("Expected not null local time value but found null")
     }
 
-    override fun getLocalTimeNullable(key: String): LocalTime? {
-        return resultSet.getObject(key, LocalTime::class.java)
+    override fun getLocalDateTimeNullable(key: String): LocalDateTime? {
+        return resultSet.getObject(getColumnIndex(key), LocalDateTime::class.java)
     }
 
     override fun getLocalDateTime(key: String): LocalDateTime {
-        return resultSet.getObject(key, LocalDateTime::class.java)
+        return getLocalDateTimeNullable(key)
             ?: error("Expected not null local datetime value but found null")
     }
 
-    override fun getLocalDateTimeNullable(key: String): LocalDateTime? {
-        return resultSet.getObject(key, LocalDateTime::class.java)
+    override fun getOffsetDateTimeNullable(key: String): OffsetDateTime? {
+        return resultSet.getObject(getColumnIndex(key), OffsetDateTime::class.java)
     }
 
     override fun getOffsetDateTime(key: String): OffsetDateTime {
-        return resultSet.getObject(key, OffsetDateTime::class.java)
+        return getOffsetDateTimeNullable(key)
             ?: error("Expected not null offset datetime value but found null")
     }
 
-    override fun getOffsetDateTimeNullable(key: String): OffsetDateTime? {
-        return resultSet.getObject(key, OffsetDateTime::class.java)
+    override fun getOffsetTimeNullable(key: String): OffsetTime? {
+        return resultSet.getObject(getColumnIndex(key), OffsetTime::class.java)
     }
 
     override fun getOffsetTime(key: String): OffsetTime {
-        return resultSet.getObject(key, OffsetTime::class.java)
+        return getOffsetTimeNullable(key)
             ?: error("Expected not null offset time value but found null")
     }
 
-    override fun getOffsetTimeNullable(key: String): OffsetTime? {
-        return resultSet.getObject(key, OffsetTime::class.java)
+    override fun getInstantNullable(key: String): Instant? {
+        return resultSet.getObject(getColumnIndex(key), Instant::class.java)
     }
 
     override fun getInstant(key: String): Instant {
-        return resultSet.getObject(key, Instant::class.java)
+        return getInstantNullable(key)
             ?: error("Expected not null instant value but found null")
     }
 
-    override fun getInstantNullable(key: String): Instant? {
-        return resultSet.getObject(key, Instant::class.java)
-    }
+    override fun getAnyNullable(key: String): Any? = resultSet.getObject(getColumnIndex(key))
 
-    override fun getAnyNullable(key: String): Any? = resultSet.getObject(key)
-
-    override fun getAny(key: String): Any = resultSet.getObject(key)
+    override fun getAny(key: String): Any = getAnyNullable(key)
         ?: error("Expected not null object value but found null")
 
     override fun <T : Any> getObjectNullable(key: String, type: Class<T>): T? {
-        return resultSet.getObject(key, type)
+        return resultSet.getObject(getColumnIndex(key), type)
     }
 
     override fun <T : Any> getObject(key: String, type: Class<T>): T {
-        return resultSet.getObject(key, type)
+        return resultSet.getObject(getColumnIndex(key), type)
             ?: error("Expected not null object value but found null")
     }
 
-    override fun getArray(key: String): Array = resultSet.getArray(key)
+    override fun getArray(key: String): Array = resultSet.getArray(getColumnIndex(key))
 }

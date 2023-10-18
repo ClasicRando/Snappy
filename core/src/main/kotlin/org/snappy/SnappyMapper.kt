@@ -35,6 +35,12 @@ object SnappyMapper {
     val decoderCache = DecoderCache(config)
 
     /**
+     * Enables matching a result field name to a property/parameter, ignoring underscores. By
+     * default, this is set as true
+     */
+    val allowUnderscoreMatch = config.allowUnderscoreMatch
+
+    /**
      * Method to ensure the cache is loaded before continuing. This will force the lazy initialized
      * caches to be loaded immediately in a blocking but thread-safe manner. This reduces the first
      * load time of queries within the application.

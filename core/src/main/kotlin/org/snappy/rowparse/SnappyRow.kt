@@ -76,29 +76,29 @@ interface SnappyRow {
     /** */
     fun getTimestamp(key: String): Timestamp
     /** */
-    fun getLocalDate(key: String): LocalDate
-    /** */
     fun getLocalDateNullable(key: String): LocalDate?
     /** */
-    fun getLocalTime(key: String): LocalTime
+    fun getLocalDate(key: String): LocalDate
     /** */
     fun getLocalTimeNullable(key: String): LocalTime?
     /** */
-    fun getLocalDateTime(key: String): LocalDateTime
+    fun getLocalTime(key: String): LocalTime
     /** */
     fun getLocalDateTimeNullable(key: String): LocalDateTime?
     /** */
-    fun getOffsetDateTime(key: String): OffsetDateTime
+    fun getLocalDateTime(key: String): LocalDateTime
     /** */
     fun getOffsetDateTimeNullable(key: String): OffsetDateTime?
     /** */
-    fun getOffsetTime(key: String): OffsetTime
+    fun getOffsetDateTime(key: String): OffsetDateTime
     /** */
     fun getOffsetTimeNullable(key: String): OffsetTime?
     /** */
-    fun getInstant(key: String): Instant
+    fun getOffsetTime(key: String): OffsetTime
     /** */
     fun getInstantNullable(key: String): Instant?
+    /** */
+    fun getInstant(key: String): Instant
     /** */
     fun getAnyNullable(key: String): Any?
     /** */
