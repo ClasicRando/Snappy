@@ -38,7 +38,7 @@ class SnappyRowImpl(
     private fun getColumnIndex(key: String): Int {
         val index = columnNames.indexOf(key)
         if (index >= 0) {
-            return index
+            return index + 1
         }
 
         if (!SnappyMapper.allowUnderscoreMatch) {
@@ -47,6 +47,7 @@ class SnappyRowImpl(
 
         return columnNamesCleaned.indexOf(key.lowercase())
             .takeIf { it >= 0 }
+            ?.plus(1)
             ?: error("Could not find column for key = '$key'")
     }
 
