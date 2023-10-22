@@ -1,10 +1,14 @@
 package org.snappy
 
+import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.serialization.json.Json
 import org.snappy.SnappyMapper.loadCache
 import org.snappy.cache.DecoderCache
 import org.snappy.cache.RowParserCache
-import java.io.File
+import org.snappy.logging.logger
+import kotlin.io.path.Path
+import kotlin.io.path.exists
+import kotlin.io.path.readText
 
 /**
  * Main object storing cached data about an application using snappy. Although it's possible to
@@ -16,12 +20,22 @@ import java.io.File
  */
 object SnappyMapper {
 
+    private val log: KLogger by logger()
+
     private val config: SnappyConfig by lazy {
-        val file = File("snappy.json")
-        val config = if (file.exists()) {
-            val text = file.readText()
-            Json.decodeFromString<SnappyConfig>(text)
+        val path = Path(System.getenv("SNAPPY_CONFIG") ?: "snappy.json")
+        val config = if (path.exists()) {
+            val text = path.readText()
+            val config = Json.decodeFromString<SnappyConfig>(text)
+            log.atInfo {
+                message = "Read json configuration"
+                payload = mapOf("config" to config)
+            }
+            config
         } else {
+            log.atInfo {
+                message = "Using default configuration"
+            }
             SnappyConfig(packages = mutableListOf())
         }
         config.packages.add("org.snappy")

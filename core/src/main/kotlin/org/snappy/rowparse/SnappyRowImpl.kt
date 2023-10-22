@@ -42,7 +42,7 @@ class SnappyRowImpl(
         }
 
         if (!SnappyMapper.allowUnderscoreMatch) {
-            error("Could not find column for key = '$key'")
+            error("Could not find column for key = '$key'. Underscore matching not enabled")
         }
 
         return columnNamesCleaned.indexOf(key.lowercase())

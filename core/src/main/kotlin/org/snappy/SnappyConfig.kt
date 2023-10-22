@@ -4,4 +4,7 @@ import kotlinx.serialization.Serializable
 
 /** Config file information deserialized */
 @Serializable
-class SnappyConfig(val packages: MutableList<String>, val allowUnderscoreMatch: Boolean = false)
+data class SnappyConfig(
+    val packages: MutableList<String>,
+    val allowUnderscoreMatch: Boolean = false,
+)
