@@ -43,7 +43,7 @@ class ArrayDecoderGenerator(
                 private val decoder = ${className}Decoder()
             
                 override fun decodeNullable(row: SnappyRow, fieldName: String): List<$className>? {
-                    val sqlArray = row.getArray(fieldName)
+                    val sqlArray = row.getArrayNullable(fieldName) ?: return null
                     if (sqlArray.array == null) {
                         return null
                     }
@@ -60,7 +60,7 @@ class ArrayDecoderGenerator(
                 private val decoder = ${className}Decoder()
                     
                 override fun decodeNullable(row: SnappyRow, fieldName: String): List<$className?>? {
-                    val sqlArray = row.getArray(fieldName)
+                    val sqlArray = row.getArrayNullable(fieldName) ?: return null
                     if (sqlArray.array == null) {
                         return null
                     }

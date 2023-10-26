@@ -108,6 +108,8 @@ interface SnappyRow {
     /** */
     fun <T : Any> getObject(key: String, type: Class<T>): T
     /** */
+    fun getArrayNullable(key: String): Array?
+    /** */
     fun getArray(key: String): Array
 }
 

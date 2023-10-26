@@ -232,5 +232,8 @@ class SnappyRowImpl(
             ?: error("Expected not null object value but found null")
     }
 
-    override fun getArray(key: String): Array = resultSet.getArray(getColumnIndex(key))
+    override fun getArrayNullable(key: String): Array? = resultSet.getArray(getColumnIndex(key))
+
+    override fun getArray(key: String): Array = getArrayNullable(key)
+        ?: error("Expected not null array value but found null")
 }
