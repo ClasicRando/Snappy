@@ -161,7 +161,7 @@ class PgTypeDecoderProcessor(
 
             addImport("$classPackage.$className")
             val importsOrdered = importsSorted.joinToString(
-                separator = "\n                ",
+                separator = "\n                    ",
             ) {
                 "import $it"
             }

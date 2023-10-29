@@ -15,6 +15,7 @@ import java.time.OffsetTime
 
 abstract class AbstractLiteralParser(literal: String) {
     protected val charBuffer = literal.substring(1, literal.length - 1).toMutableList()
+    protected var isDone = false
 
     @PublishedApi
     internal inline fun <T : Any?> tryParseNextBuffer(

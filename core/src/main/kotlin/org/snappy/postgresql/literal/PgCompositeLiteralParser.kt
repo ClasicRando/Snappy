@@ -14,9 +14,10 @@ fun <T : Any> parseComposite(pgObject: PGobject, parsing: PgCompositeLiteralPars
 
 class PgCompositeLiteralParser internal constructor(value: String) : AbstractLiteralParser(value) {
     override fun readNextBuffer(): String? {
-        if (charBuffer.isEmpty()) {
+        if (isDone) {
             throw ExhaustedBuffer()
         }
+        var foundDelimiter = false
         var quoted = false
         var inQuotes = false
         var inEscape = false
@@ -38,11 +39,15 @@ class PgCompositeLiteralParser internal constructor(value: String) : AbstractLit
                     }
                 }
                 char == '\\' && !inEscape -> inEscape = true
-                char == ',' && !inQuotes -> break
+                char == DELIMITER && !inQuotes -> {
+                    foundDelimiter = true
+                    break
+                }
                 else -> builder.append(char)
             }
             previousChar = char
         }
+        isDone = !foundDelimiter
         return builder.takeIf { it.isNotEmpty() || quoted }?.toString()
     }
 
@@ -76,5 +81,9 @@ class PgCompositeLiteralParser internal constructor(value: String) : AbstractLit
 
     inline fun <reified T : Any> readList(): List<T?>? {
         return readList(T::class)
+    }
+
+    companion object {
+        private const val DELIMITER = ','
     }
 }

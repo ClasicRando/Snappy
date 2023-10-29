@@ -18,11 +18,11 @@ class PgArrayLiteralParser<T : Any> @PublishedApi internal constructor(
     literal: String,
     private val elementClass: KClass<T>
 ) : AbstractLiteralParser(literal) {
-    private var done = false
     override fun readNextBuffer(): String? {
-        if (done) {
+        if (isDone) {
             throw ExhaustedBuffer()
         }
+        var foundDelimiter = false
         var inQuotes = false
         var inEscape = false
         val builder = StringBuilder()
@@ -35,11 +35,14 @@ class PgArrayLiteralParser<T : Any> @PublishedApi internal constructor(
                 }
                 char == '"' -> inQuotes = !inQuotes
                 char == '\\' -> inEscape = true
-                char == DELIMITER && !inQuotes -> break
+                char == DELIMITER && !inQuotes -> {
+                    foundDelimiter = true
+                    break
+                }
                 else -> builder.append(char)
             }
         }
-        done = charBuffer.isEmpty()
+        isDone = !foundDelimiter
         return builder.toString().takeIf { it.isNotEmpty() && it != "NULL" }
     }
 
@@ -51,7 +54,7 @@ class PgArrayLiteralParser<T : Any> @PublishedApi internal constructor(
     }
 
     fun parseToList(): List<T?> = buildList {
-        while (!done) {
+        while (!isDone) {
             when (elementClass) {
                 Boolean::class -> add(elementClass.cast(readBoolean()))
                 Short::class -> add(elementClass.cast(readShort()))
